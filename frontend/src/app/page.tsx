@@ -21,6 +21,7 @@ import { LanguageCode, LedgerDiffResponse, SnapshotMeta } from "@/lib/types";
 type ActivePlane = "audit" | "assurance" | "verify" | "infra";
 
 export default function PollTollControlPlane() {
+  const [mounted, setMounted] = useState(false);
   const [plane, setPlane] = useState<ActivePlane>("audit");
   const [language, setLanguage] = useState<LanguageCode>("en");
   const [snapshots, setSnapshots] = useState<SnapshotMeta[]>([]);
@@ -32,6 +33,10 @@ export default function PollTollControlPlane() {
   const [preselectedEpic, setPreselectedEpic] = useState<string | null>(null);
 
   const t = UI_STRINGS[language];
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const loadDiff = useCallback(async (fromV: string, toV: string) => {
     setLoadingDiff(true);
@@ -69,8 +74,12 @@ export default function PollTollControlPlane() {
     setToVersion(newSnap.version_id);
   }
 
+  if (!mounted) {
+    return <main suppressHydrationWarning className="min-h-screen bg-slate-100" />;
+  }
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div suppressHydrationWarning className="min-h-screen flex flex-col">
       {/* Infrastructure Telemetry Top Bar */}
       <div className="bg-slate-950 text-slate-300 border-b border-slate-800 px-4 py-2 text-xs font-mono">
         <div className="mx-auto max-w-7xl flex flex-wrap items-center justify-between gap-2">
