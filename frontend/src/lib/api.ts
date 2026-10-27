@@ -99,10 +99,17 @@ export async function fetchQuotaStats(): Promise<{
   configured_key_count: number;
   keys_ready: number;
   keys_in_cooldown: number;
+  gemini_key_count?: number;
+  gemini_keys_ready?: number;
+  groq_key_count?: number;
+  groq_keys_ready?: number;
+  provider_priority?: string;
   model_cascade: string[];
+  groq_model_cascade?: string[];
   cached_entries_in_duckdb: number;
   metrics: {
     live_gemini_calls: number;
+    live_groq_calls?: number;
     cache_hits_saved: number;
     deterministic_fastpath_saved: number;
     rate_limit_rotations: number;

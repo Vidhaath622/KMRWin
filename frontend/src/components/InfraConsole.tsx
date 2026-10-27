@@ -75,8 +75,8 @@ export default function InfraConsole({
         <div className="rounded-xl border border-indigo-200 bg-indigo-50/40 p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase text-indigo-800">
-              <Gauge className="h-4 w-4" /> Free-Tier Gemini Quota Shield &amp;
-              Persistent DuckDB Cache
+              <Gauge className="h-4 w-4" /> Multi-Cloud Free-Tier Quota Shield
+              (Gemini + Groq LPU + DuckDB Cache)
             </div>
             <span className="rounded bg-slate-900 px-2.5 py-0.5 font-mono text-xs text-emerald-300">
               Cascade: {quota.model_cascade.join(" → ")}
@@ -84,9 +84,13 @@ export default function InfraConsole({
           </div>
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4 text-xs">
             <div className="rounded-lg border border-indigo-100 bg-white p-3">
-              <div className="text-slate-500">Key Pool (Ready / Total)</div>
+              <div className="text-slate-500">
+                Key Pool (Gemini / Groq Ready)
+              </div>
               <div className="mt-0.5 font-mono text-base font-bold text-slate-900">
-                {quota.keys_ready} / {quota.configured_key_count}
+                {quota.gemini_keys_ready ?? quota.keys_ready}/
+                {quota.gemini_key_count ?? quota.configured_key_count} Gem •{" "}
+                {quota.groq_keys_ready ?? 0}/{quota.groq_key_count ?? 0} Groq
               </div>
             </div>
             <div className="rounded-lg border border-indigo-100 bg-white p-3">
@@ -103,9 +107,10 @@ export default function InfraConsole({
               </div>
             </div>
             <div className="rounded-lg border border-indigo-100 bg-white p-3">
-              <div className="text-slate-500">Live Gemini Calls Spent</div>
+              <div className="text-slate-500">Live Calls (Gemini / Groq)</div>
               <div className="mt-0.5 font-mono text-base font-bold text-slate-900">
-                {quota.metrics.live_gemini_calls}
+                {quota.metrics.live_gemini_calls} /{" "}
+                {quota.metrics.live_groq_calls ?? 0}
               </div>
             </div>
           </div>

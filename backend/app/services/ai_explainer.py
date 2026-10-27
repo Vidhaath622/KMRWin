@@ -12,6 +12,7 @@ Built specifically to thrive on FREE-TIER Gemini API keys:
 
 from __future__ import annotations
 
+import base64
 import datetime as dt
 import hashlib
 import itertools
@@ -20,6 +21,9 @@ import os
 import pathlib
 import re
 import time
+import urllib.error
+import urllib.request
+import uuid
 from typing import Any
 
 import duckdb
@@ -59,9 +63,14 @@ LANGUAGE_NAMES: dict[LanguageCode, str] = {
 
 # In-memory telemetry & per-key cooldown state (keys themselves are NEVER exposed)
 _KEY_COOLDOWN_UNTIL: dict[int, float] = {}
+_GROQ_KEY_COOLDOWN_UNTIL: dict[int, float] = {}
+_GROQ_MODEL_COOLDOWN_UNTIL: dict[tuple[int, str], float] = {}
 _KEY_COUNTER = itertools.count(0)
+_GROQ_COUNTER = itertools.count(0)
+_PROVIDER_COUNTER = itertools.count(0)
 _GATEWAY_METRICS = {
     "live_gemini_calls": 0,
+    "live_groq_calls": 0,
     "cache_hits_saved": 0,
     "deterministic_fastpath_saved": 0,
     "rate_limit_rotations": 0,
@@ -72,15 +81,14 @@ _BACKEND_ENV_PATH = pathlib.Path(__file__).resolve().parents[2] / ".env"
 _HOME_ENV_PATH = pathlib.Path.home() / ".env"
 
 
-def _load_key_pool() -> list[str]:
+def _load_env_keys(csv_var: str, slot_vars: tuple[str, ...]) -> list[str]:
     merged_env: dict[str, str] = {}
-    # Project-local backend/.env takes precedence over ~/.env and ambient shell vars
     for env_path in (_HOME_ENV_PATH, _BACKEND_ENV_PATH):
         if env_path.exists():
             for k, v in dotenv_values(env_path).items():
                 if v:
                     merged_env[k] = v
-    for k in ("GEMINI_API_KEYS", "GEMINI_API_KEY", "GEMINI_API_KEY_2", "GEMINI_API_KEY_3"):
+    for k in (csv_var, *slot_vars):
         env_val = os.environ.get(k, "").strip()
         if env_val and k not in merged_env:
             merged_env[k] = env_val
@@ -89,20 +97,28 @@ def _load_key_pool() -> list[str]:
     # Prefer keys explicitly written to backend/.env first
     if _BACKEND_ENV_PATH.exists():
         b_vals = dotenv_values(_BACKEND_ENV_PATH)
-        for env_name in ("GEMINI_API_KEY", "GEMINI_API_KEY_2", "GEMINI_API_KEY_3"):
+        for env_name in slot_vars:
             val = (b_vals.get(env_name) or "").strip()
             if val and val not in raw_list:
                 raw_list.append(val)
-    csv_keys = merged_env.get("GEMINI_API_KEYS", "")
+    csv_keys = merged_env.get(csv_var, "")
     if csv_keys:
         for k in csv_keys.split(","):
             if k.strip() and k.strip() not in raw_list:
                 raw_list.append(k.strip())
-    for env_name in ("GEMINI_API_KEY", "GEMINI_API_KEY_2", "GEMINI_API_KEY_3"):
+    for env_name in slot_vars:
         val = merged_env.get(env_name, "").strip()
         if val and val not in raw_list:
             raw_list.append(val)
     return raw_list
+
+
+def _load_key_pool() -> list[str]:
+    return _load_env_keys("GEMINI_API_KEYS", ("GEMINI_API_KEY", "GEMINI_API_KEY_2", "GEMINI_API_KEY_3"))
+
+
+def _load_groq_key_pool() -> list[str]:
+    return _load_env_keys("GROQ_API_KEYS", ("GROQ_API_KEY", "GROQ_API_KEY_2", "GROQ_API_KEY_3"))
 
 
 def _model_cascade() -> list[str]:
@@ -113,6 +129,26 @@ def _model_cascade() -> list[str]:
         if m and m not in deduped:
             deduped.append(m)
     return deduped
+
+
+def _groq_model_cascade() -> list[str]:
+    primary = os.environ.get("POLLTOLL_GROQ_MODEL", "llama-3.3-70b-versatile").strip()
+    # On Groq free tier, each model has its OWN independent RPM/RPD quota bucket!
+    defaults = [primary, "llama-3.1-8b-instant"]
+    deduped: list[str] = []
+    for m in defaults:
+        if m and m not in deduped:
+            deduped.append(m)
+    return deduped
+
+
+def _ai_priority() -> str:
+    if _BACKEND_ENV_PATH.exists():
+        val = (dotenv_values(_BACKEND_ENV_PATH).get("POLLTOLL_AI_PRIORITY") or "").strip().lower()
+        if val in ("auto", "groq", "gemini"):
+            return val
+    val = os.environ.get("POLLTOLL_AI_PRIORITY", "auto").strip().lower()
+    return val if val in ("auto", "groq", "gemini") else "auto"
 
 
 def _ensure_cache_table(con: duckdb.DuckDBPyConnection) -> None:
@@ -164,23 +200,34 @@ def _cache_put(
 
 def get_ai_gateway_stats(con: duckdb.DuckDBPyConnection) -> dict[str, Any]:
     _ensure_cache_table(con)
-    keys = _load_key_pool()
+    gem_keys = _load_key_pool()
+    groq_keys = _load_groq_key_pool()
     now = time.time()
-    cooling = sum(1 for idx in range(len(keys)) if _KEY_COOLDOWN_UNTIL.get(idx, 0.0) > now)
+    gem_cooling = sum(1 for idx in range(len(gem_keys)) if _KEY_COOLDOWN_UNTIL.get(idx, 0.0) > now)
+    groq_cooling = sum(1 for idx in range(len(groq_keys)) if _GROQ_KEY_COOLDOWN_UNTIL.get(idx, 0.0) > now)
+    gem_ready = max(0, len(gem_keys) - gem_cooling)
+    groq_ready = max(0, len(groq_keys) - groq_cooling)
     cached_rows = con.execute("SELECT count(*) FROM ai_response_cache").fetchone()[0]
+    combined_cascade = list(_model_cascade()) + [f"groq:{m}" for m in _groq_model_cascade()]
     return {
-        "configured_key_count": len(keys),
-        "keys_ready": max(0, len(keys) - cooling),
-        "keys_in_cooldown": cooling,
-        "model_cascade": _model_cascade(),
+        "configured_key_count": len(gem_keys) + len(groq_keys),
+        "keys_ready": gem_ready + groq_ready,
+        "keys_in_cooldown": gem_cooling + groq_cooling,
+        "gemini_key_count": len(gem_keys),
+        "gemini_keys_ready": gem_ready,
+        "groq_key_count": len(groq_keys),
+        "groq_keys_ready": groq_ready,
+        "provider_priority": _ai_priority(),
+        "model_cascade": combined_cascade,
+        "groq_model_cascade": _groq_model_cascade(),
         "cached_entries_in_duckdb": cached_rows,
         "metrics": dict(_GATEWAY_METRICS),
         "free_tier_protections": [
-            "High-quota gemini-3.5-flash-lite primary model with automatic cascade",
+            "Cross-cloud failover: Gemini (3.5-flash-lite) <-> Groq LPU (llama-3.3-70b + llama-3.1-8b)",
+            "Groq per-model quota isolation (~14.4k RPD on 8b-instant + ~1k RPD on 70b per org)",
             "Persistent SHA-256 DuckDB response cache (0 tokens on repeat claims/questions)",
-            "Multi-key round-robin rotation + 60s 429 cooldown across teammates",
-            "Browser Web Speech STT/TTS first (0 audio tokens by default)",
-            "Deterministic DuckDB fast-path on EPIC lookups & UI mount previews",
+            "Multi-key teammate rotation + automatic 429/403 cooldown quarantine",
+            "Browser Web Speech + Groq Whisper STT fallback + Deterministic DuckDB fast-path",
         ],
     }
 
@@ -231,11 +278,203 @@ def _call_gemini_with_rotation(
                     _GATEWAY_METRICS["rate_limit_rotations"] += 1
                     continue
                 if "403" in err_str or "401" in err_str or "permission" in err_str or "api key" in err_str:
-                    # E.g. AI Studio project where free tier is disabled; rotate immediately to working key
                     _KEY_COOLDOWN_UNTIL[k_idx] = time.time() + 1800.0
                     _GATEWAY_METRICS["rate_limit_rotations"] += 1
                     continue
                 break
+    return None
+
+
+def _call_groq_structured(
+    prompt: str,
+    model_cls: type[BaseModel],
+) -> tuple[Any, str] | None:
+    """Calls Groq OpenAI-compatible Chat Completions across org keys & independent per-model buckets."""
+    keys = _load_groq_key_pool()
+    if not keys:
+        return None
+
+    schema = model_cls.model_json_schema()
+    models = _groq_model_cascade()
+    now = time.time()
+    start_idx = next(_GROQ_COUNTER) % len(keys)
+
+    system_msg = (
+        "You are PollToll's non-partisan electoral audit JSON engine. "
+        "Output ONLY a single valid JSON object matching this exact JSON Schema "
+        "(use exact property names, satisfy all required fields, no markdown code fences):\n"
+        f"{json.dumps(schema, ensure_ascii=False)}"
+    )
+
+    for model_name in models:
+        for offset in range(len(keys)):
+            k_idx = (start_idx + offset) % len(keys)
+            if _GROQ_KEY_COOLDOWN_UNTIL.get(k_idx, 0.0) > now:
+                continue
+            if _GROQ_MODEL_COOLDOWN_UNTIL.get((k_idx, model_name), 0.0) > now:
+                continue
+            body_bytes = json.dumps(
+                {
+                    "model": model_name,
+                    "temperature": 0.1,
+                    "response_format": {"type": "json_object"},
+                    "messages": [
+                        {"role": "system", "content": system_msg},
+                        {"role": "user", "content": prompt},
+                    ],
+                },
+                ensure_ascii=False,
+            ).encode("utf-8")
+            req = urllib.request.Request(
+                "https://api.groq.com/openai/v1/chat/completions",
+                data=body_bytes,
+                method="POST",
+                headers={
+                    "Authorization": f"Bearer {keys[k_idx]}",
+                    "Content-Type": "application/json",
+                    "User-Agent": "PollToll-Audit-Engine/1.0",
+                },
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    payload = json.loads(resp.read().decode("utf-8"))
+                raw_text = payload["choices"][0]["message"]["content"]
+                parsed = model_cls.model_validate_json(raw_text)
+                _GATEWAY_METRICS["live_groq_calls"] += 1
+                return parsed, f"groq:{model_name}"
+            except urllib.error.HTTPError as http_err:
+                code = http_err.code
+                if code == 429:
+                    # Per-(org, model) cooldown: other models on the same Groq key stay ready!
+                    _GROQ_MODEL_COOLDOWN_UNTIL[(k_idx, model_name)] = time.time() + 60.0
+                    _GATEWAY_METRICS["rate_limit_rotations"] += 1
+                    continue
+                if code in (401, 403):
+                    _GROQ_KEY_COOLDOWN_UNTIL[k_idx] = time.time() + 1800.0
+                    _GATEWAY_METRICS["rate_limit_rotations"] += 1
+                    continue
+                break
+            except Exception:
+                continue
+    return None
+
+
+def _transcribe_audio_groq(audio_b64: str, mime_type: str, lang: str) -> str | None:
+    """Free-tier Whisper transcription via Groq `whisper-large-v3-turbo` when available."""
+    keys = _load_groq_key_pool()
+    if not keys:
+        return None
+    try:
+        audio_bytes = base64.b64decode(audio_b64)
+    except Exception:
+        return None
+
+    now = time.time()
+    start_idx = next(_GROQ_COUNTER) % len(keys)
+    ext = "wav" if "wav" in (mime_type or "") else "webm"
+    boundary = f"----PollTollBoundary{uuid.uuid4().hex}"
+
+    parts: list[bytes] = []
+    parts.append(
+        (
+            f"--{boundary}\r\n"
+            f'Content-Disposition: form-data; name="file"; filename="speech.{ext}"\r\n'
+            f"Content-Type: {mime_type or 'audio/webm'}\r\n\r\n"
+        ).encode("utf-8")
+        + audio_bytes
+        + b"\r\n"
+    )
+    for field_name, field_val in (
+        ("model", "whisper-large-v3-turbo"),
+        ("language", lang),
+        ("response_format", "json"),
+    ):
+        parts.append(
+            (
+                f"--{boundary}\r\n"
+                f'Content-Disposition: form-data; name="{field_name}"\r\n\r\n'
+                f"{field_val}\r\n"
+            ).encode("utf-8")
+        )
+    parts.append(f"--{boundary}--\r\n".encode("utf-8"))
+    body = b"".join(parts)
+
+    for offset in range(len(keys)):
+        k_idx = (start_idx + offset) % len(keys)
+        if _GROQ_KEY_COOLDOWN_UNTIL.get(k_idx, 0.0) > now:
+            continue
+        if _GROQ_MODEL_COOLDOWN_UNTIL.get((k_idx, "whisper-large-v3-turbo"), 0.0) > now:
+            continue
+        req = urllib.request.Request(
+            "https://api.groq.com/openai/v1/audio/transcriptions",
+            data=body,
+            method="POST",
+            headers={
+                "Authorization": f"Bearer {keys[k_idx]}",
+                "Content-Type": f"multipart/form-data; boundary={boundary}",
+                "User-Agent": "PollToll-Audit-Engine/1.0",
+            },
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+            text = (data.get("text") or "").strip()
+            if text:
+                _GATEWAY_METRICS["live_groq_calls"] += 1
+                return text
+        except urllib.error.HTTPError as http_err:
+            if http_err.code == 429:
+                _GROQ_MODEL_COOLDOWN_UNTIL[(k_idx, "whisper-large-v3-turbo")] = time.time() + 60.0
+                _GATEWAY_METRICS["rate_limit_rotations"] += 1
+                continue
+            if http_err.code in (401, 403):
+                _GROQ_KEY_COOLDOWN_UNTIL[k_idx] = time.time() + 1800.0
+                _GATEWAY_METRICS["rate_limit_rotations"] += 1
+                continue
+        except Exception:
+            continue
+    return None
+
+
+def _call_structured_llm(
+    prompt: str,
+    model_cls: type[BaseModel],
+) -> tuple[Any, str] | None:
+    """Load-balances and fails over across Groq and Gemini structured pools."""
+    priority = _ai_priority()
+    has_groq = len(_load_groq_key_pool()) > 0
+    has_gemini = len(_load_key_pool()) > 0
+
+    if priority == "groq":
+        providers = ["groq", "gemini"]
+    elif priority == "gemini":
+        providers = ["gemini", "groq"]
+    elif has_groq and has_gemini:
+        # Alternate across clouds so both free-tier pools stay cool, with instant failover
+        providers = ["groq", "gemini"] if (next(_PROVIDER_COUNTER) % 2 == 0) else ["gemini", "groq"]
+    elif has_groq:
+        providers = ["groq"]
+    else:
+        providers = ["gemini"]
+
+    for prov in providers:
+        if prov == "groq" and has_groq:
+            groq_res = _call_groq_structured(prompt, model_cls)
+            if groq_res is not None:
+                return groq_res
+        elif prov == "gemini" and has_gemini:
+            gem_out = _call_gemini_with_rotation(
+                input_payload=prompt,
+                response_format=model_cls.model_json_schema(),
+                response_mime_type="application/json",
+            )
+            if gem_out is not None:
+                inter, model_used = gem_out
+                try:
+                    parsed = model_cls.model_validate_json(inter.output_text)
+                    return parsed, model_used
+                except Exception:
+                    continue
     return None
 
 
@@ -332,15 +571,10 @@ def check_viral_claim(
             f"CLAIM: {req.claim_text}\n"
             f"LEDGER JSON: {json.dumps(evidence_context, ensure_ascii=False)}"
         )
-        gem_out = _call_gemini_with_rotation(
-            input_payload=prompt,
-            response_format=_GeminiClaimStructured.model_json_schema(),
-            response_mime_type="application/json",
-        )
-        if gem_out is not None:
-            interaction, model_used = gem_out
+        llm_out = _call_structured_llm(prompt, _GeminiClaimStructured)
+        if llm_out is not None:
+            parsed, model_used = llm_out
             try:
-                parsed = _GeminiClaimStructured.model_validate_json(interaction.output_text)
                 resp = ClaimCheckResponse(
                     claim_text=req.claim_text,
                     language=req.language,
@@ -572,28 +806,32 @@ def assist_citizen(
 
     # 1. Audio fallback only when browser lacked Web Speech API and uploaded raw audio
     if req.audio_base64:
-        tr_out = _call_gemini_with_rotation(
-            input_payload=[
-                {
-                    "type": "text",
-                    "text": (
-                        f"Transcribe this citizen's spoken electoral-roll question accurately in "
-                        f"{LANGUAGE_NAMES[req.language]} (preserve any EPIC ID like SYN-GJ-109-0042). "
-                        "Return ONLY raw transcript text."
-                    ),
-                },
-                {
-                    "type": "audio",
-                    "data": req.audio_base64,
-                    "mime_type": req.audio_mime_type or "audio/webm",
-                },
-            ],
-            explicit_models=["gemini-3.8-flash", "gemini-3.5-flash-lite"],
+        transcript = _transcribe_audio_groq(
+            req.audio_base64, req.audio_mime_type or "audio/webm", req.language
         )
-        if tr_out is not None and tr_out[0].output_text:
-            transcript = tr_out[0].output_text.strip()
-            if not query_text:
-                query_text = transcript
+        if not transcript:
+            tr_out = _call_gemini_with_rotation(
+                input_payload=[
+                    {
+                        "type": "text",
+                        "text": (
+                            f"Transcribe this citizen's spoken electoral-roll question accurately in "
+                            f"{LANGUAGE_NAMES[req.language]} (preserve any EPIC ID like SYN-GJ-109-0042). "
+                            "Return ONLY raw transcript text."
+                        ),
+                    },
+                    {
+                        "type": "audio",
+                        "data": req.audio_base64,
+                        "mime_type": req.audio_mime_type or "audio/webm",
+                    },
+                ],
+                explicit_models=["gemini-3.8-flash", "gemini-3.5-flash-lite"],
+            )
+            if tr_out is not None and tr_out[0].output_text:
+                transcript = tr_out[0].output_text.strip()
+        if transcript and not query_text:
+            query_text = transcript
 
     # 2. Extract EPIC ID
     epic = req.epic_id.strip().upper() if req.epic_id else None
@@ -649,15 +887,10 @@ def assist_citizen(
                 f"Ledger JSON: {json.dumps(ctx, ensure_ascii=False)}\n"
                 "Explain status clearly and cite official ECI Form 6 (inclusion), Form 7 (objection/deletion), or Form 8 (shifting/correction) on voters.eci.gov.in."
             )
-            gem_out = _call_gemini_with_rotation(
-                input_payload=prompt,
-                response_format=_GeminiCitizenStructured.model_json_schema(),
-                response_mime_type="application/json",
-            )
-            if gem_out is not None:
-                inter, model_used = gem_out
+            llm_out = _call_structured_llm(prompt, _GeminiCitizenStructured)
+            if llm_out is not None:
+                parsed, model_used = llm_out
                 try:
-                    parsed = _GeminiCitizenStructured.model_validate_json(inter.output_text)
                     answer_text = sanitize_neutral_text(parsed.answer_text)
                     steps_out = parsed.official_next_steps
                     forms_out = parsed.referenced_forms
