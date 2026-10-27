@@ -23,7 +23,7 @@ import time
 from typing import Any
 
 import duckdb
-from dotenv import load_dotenv
+from dotenv import dotenv_values, load_dotenv
 from pydantic import BaseModel, Field
 
 from app.engine.anomaly import detect_anomalies
@@ -68,13 +68,38 @@ _GATEWAY_METRICS = {
 }
 
 
+_BACKEND_ENV_PATH = pathlib.Path(__file__).resolve().parents[2] / ".env"
+_HOME_ENV_PATH = pathlib.Path.home() / ".env"
+
+
 def _load_key_pool() -> list[str]:
+    merged_env: dict[str, str] = {}
+    # Project-local backend/.env takes precedence over ~/.env and ambient shell vars
+    for env_path in (_HOME_ENV_PATH, _BACKEND_ENV_PATH):
+        if env_path.exists():
+            for k, v in dotenv_values(env_path).items():
+                if v:
+                    merged_env[k] = v
+    for k in ("GEMINI_API_KEYS", "GEMINI_API_KEY", "GEMINI_API_KEY_2", "GEMINI_API_KEY_3"):
+        env_val = os.environ.get(k, "").strip()
+        if env_val and k not in merged_env:
+            merged_env[k] = env_val
+
     raw_list: list[str] = []
-    csv_keys = os.environ.get("GEMINI_API_KEYS", "")
+    # Prefer keys explicitly written to backend/.env first
+    if _BACKEND_ENV_PATH.exists():
+        b_vals = dotenv_values(_BACKEND_ENV_PATH)
+        for env_name in ("GEMINI_API_KEY", "GEMINI_API_KEY_2", "GEMINI_API_KEY_3"):
+            val = (b_vals.get(env_name) or "").strip()
+            if val and val not in raw_list:
+                raw_list.append(val)
+    csv_keys = merged_env.get("GEMINI_API_KEYS", "")
     if csv_keys:
-        raw_list.extend([k.strip() for k in csv_keys.split(",") if k.strip()])
+        for k in csv_keys.split(","):
+            if k.strip() and k.strip() not in raw_list:
+                raw_list.append(k.strip())
     for env_name in ("GEMINI_API_KEY", "GEMINI_API_KEY_2", "GEMINI_API_KEY_3"):
-        val = os.environ.get(env_name, "").strip()
+        val = merged_env.get(env_name, "").strip()
         if val and val not in raw_list:
             raw_list.append(val)
     return raw_list
@@ -163,6 +188,7 @@ def get_ai_gateway_stats(con: duckdb.DuckDBPyConnection) -> dict[str, Any]:
 def _call_gemini_with_rotation(
     input_payload: Any,
     response_format: dict[str, Any] | None = None,
+    response_mime_type: str | None = None,
     generation_config: dict[str, Any] | None = None,
     explicit_models: list[str] | None = None,
 ) -> tuple[Any, str] | None:
@@ -191,6 +217,8 @@ def _call_gemini_with_rotation(
                 }
                 if response_format is not None:
                     kwargs["response_format"] = response_format
+                if response_mime_type is not None:
+                    kwargs["response_mime_type"] = response_mime_type
                 if generation_config is not None:
                     kwargs["generation_config"] = generation_config
                 interaction = client.interactions.create(**kwargs)
@@ -200,6 +228,11 @@ def _call_gemini_with_rotation(
                 err_str = str(exc).lower()
                 if "429" in err_str or "quota" in err_str or "exhausted" in err_str or "rate" in err_str:
                     _KEY_COOLDOWN_UNTIL[k_idx] = time.time() + 60.0
+                    _GATEWAY_METRICS["rate_limit_rotations"] += 1
+                    continue
+                if "403" in err_str or "401" in err_str or "permission" in err_str or "api key" in err_str:
+                    # E.g. AI Studio project where free tier is disabled; rotate immediately to working key
+                    _KEY_COOLDOWN_UNTIL[k_idx] = time.time() + 1800.0
                     _GATEWAY_METRICS["rate_limit_rotations"] += 1
                     continue
                 break
@@ -301,11 +334,8 @@ def check_viral_claim(
         )
         gem_out = _call_gemini_with_rotation(
             input_payload=prompt,
-            response_format={
-                "type": "text",
-                "mime_type": "application/json",
-                "schema": _GeminiClaimStructured.model_json_schema(),
-            },
+            response_format=_GeminiClaimStructured.model_json_schema(),
+            response_mime_type="application/json",
         )
         if gem_out is not None:
             interaction, model_used = gem_out
@@ -621,11 +651,8 @@ def assist_citizen(
             )
             gem_out = _call_gemini_with_rotation(
                 input_payload=prompt,
-                response_format={
-                    "type": "text",
-                    "mime_type": "application/json",
-                    "schema": _GeminiCitizenStructured.model_json_schema(),
-                },
+                response_format=_GeminiCitizenStructured.model_json_schema(),
+                response_mime_type="application/json",
             )
             if gem_out is not None:
                 inter, model_used = gem_out
