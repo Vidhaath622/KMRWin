@@ -1,108 +1,104 @@
-# PollToll — Judge Pitch, Live Demo Choreography & 60s Reel Playbook
+# PollToll — Judge Pitch, Live Demo Script & 60s Reel Playbook
 
 > [!IMPORTANT]
-> **Your Core Winning Thesis (Say This in the First 20 Seconds):**
-> *"We are NOT rebuilding ECI's internal ERONET voter-registration or duplicate-photo tool. PollToll is **independent electoral change-audit infrastructure**—like `git diff` + statistical confidence intervals + `Ed25519` cryptographic receipts over **published** electoral-roll snapshots—so observers, journalists, and citizens can separate innocent booth splits from true statistical outliers without ever declaring fraud."*
+> **Say this in the first 20 seconds:**
+> *"Electoral rolls change by lakhs of names every revision, and rumours spread faster than anyone can check them. PollToll lines up two versions of a roll entry by entry, tells apart people who **moved booths** from people who were **removed**, flags only what is statistically unusual, and signs every audit so anyone can verify it. It never declares fraud. A flag means a person should look closer."*
+
+All numbers below are the live values for **2025 Final Roll → 2026 Draft Roll** (`v2025_final → v2026_draft`). If you change the comparison or the data, re-read them off the screen.
+
+| Fact | Value |
+| :--- | :--- |
+| Electors | 7,809 → 7,804 |
+| Removed / added | −241 / +236 |
+| Moved to another booth (not removed) | 338 |
+| Entries corrected | 90 |
+| Flags raised | 6 (2 need a closer look) |
+| PS-109 | 352 names left (raw drop 37.0%): 338 moved intact to PS-110, only 14 removed. Net removal 1.47% vs 1.81% history |
+| PS-302 | 9.8% removed (71 of 723), 95% CI [7.9%, 12.2%], history 1.47%, **+18.5σ**, 0 transfers |
+| PS-104 | 11.5% removed (73 of 637), **+23.1σ**. Innocent explanation on the card: hostel batch graduating |
 
 ---
 
-## 1. Stage Flow Overview (4 Minutes Total)
+## 1. Stage Flow (4 minutes), mapped to the brief
 
 ```mermaid
 flowchart LR
-    A["0:00-0:45 Hook & ERONET Wedge (Yash)"] --> B["0:45-1:50 Plane 1: Change Ledger & Booth Split Proof (Vidhaath)"]
-    B --> C["1:50-2:45 Plane 3: Multilingual Citizen Voice + Viral Claim Checker (Yash/Vidhaath)"]
-    C --> D["2:45-3:30 Plane 2: Ed25519 Receipt + Live 1-Byte Tamper Attack (Vidhaath)"]
-    D --> E["3:30-4:00 Plane 4: Headless CLI / CSV Ingest & Business Close (Yash)"]
+    A["0:00-0:40 Hook on the Dashboard (Yash)"] --> B["0:40-1:50 Module 1 + 2: Comparison and Flags (Vidhaath)"]
+    B --> C["1:50-2:45 Module 4 + 3: Claim checker and citizen assistant (Yash)"]
+    C --> D["2:45-3:40 Human review and signed report (Vidhaath)"]
+    D --> E["3:40-4:00 Rules recap and business close (Yash)"]
 ```
 
----
-
-## 2. Pre-Stage Checklist (5 Minutes Before Judging)
-
-1. **Ensure both servers are live** (`http://localhost:3000` and `http://127.0.0.1:8000`).
-2. **Pre-warm DuckDB AI Cache** so preset claims in English, Hindi, and Gujarati return in `<2 ms` even if venue Wi-Fi drops:
-   ```zsh
-   python3 /Users/root1/KRMWin/scripts/prewarm_demo_cache.py
-   ```
-3. **Browser Window Setup** (`Cmd` + `+` once to `110%` zoom for projector readability):
-   - **Tab 1**: `http://localhost:3000` opened on **PollToll Audit** (`v2025_final` → `v2026_draft`)
-   - **Tab 2**: [polltoll_infrastructure_wireframe.html](file:///Users/root1/.gemini/antigravity/brain/545e6cb4-5406-4bc1-9858-1ab1245bd504/polltoll_infrastructure_wireframe.html) (optional 10-second architecture flash)
-   - **Terminal Split**: Ready in `/Users/root1/KRMWin/backend` to flash offline CLI verification (`uv run python polltoll_cli.py gap-matrix`)
-4. *(Optional Bonus)* **Let Judges Try PollToll Verify on Their Own Phones via Cloudflare Quick Tunnel**:
-   - If you want judges to scan a QR code and test Hindi/Gujarati claims live on their phones, run `brew install cloudflared && cloudflared tunnel --url http://localhost:3000` (note: since `frontend` calls `127.0.0.1:8000` by default, keep stage laptop HDMI as your primary demo screen).
+Name the module out loud each time you show it ("This is module 1, anomaly detection…"). Judges are scoring against the brief's list.
 
 ---
 
-## 3. Minute-by-Minute Click & Speaking Script (`Vidhaath + Yash`)
+## 2. Pre-Stage Checklist (5 minutes before)
 
-### Act I — The Hook & Serious ERONET Differentiation (`0:00 – 0:45`)
-- **Speaker (Yash)**:
-  - *"Every election season, roll revisions add or delete millions of names. Viral screenshots claim '340 voters vanished from Booth 109 overnight!' Citizens panic, observers can't audit PDFs at scale, and trust erodes regardless of the truth."*
-  - *"Most hackathon projects say 'we detect duplicate voters with AI.' We checked the Election Commission's own documentation first: **ERONET** already runs a Unified National Photo Electoral Roll with Demographic and Photo Similar Entries workflows. Competing by rebuilding ERONET is a losing strategy."*
-  - *"Instead, **PollToll** builds what ERONET isn't designed to be: an **independent external change-audit protocol** over published roll snapshots. We sell verifiable evidence and uncertainty math—never accusations."*
-
----
-
-### Act II — Plane 1: Electoral Change Ledger & Statistical Anomaly Engine (`0:45 – 1:50`)
-- **Screen**: [AuditWorkspace.tsx](file:///Users/root1/KRMWin/frontend/src/components/AuditWorkspace.tsx) (`PollToll Audit` tab, `2025 Final Roll` → `2026 Draft Roll` over 100% synthetic `SYN-GJ-*` data).
-- **Clicks & Narration (Vidhaath)**:
-  1. **Point to the top KPI strip & Recharts Bar Chart**:
-     - *"Look at Booth `PS-109` vs `PS-302` on our chart. A naive diff script sees `PS-109` drop by 340 voters—a massive **35.8% raw drop**—and screams 'mass deletion!'"*
-  2. **Click the `PS-109` Reconciliation Flag (`RULE_BOOTH_SPLIT_RECONCILE@1.0.0`)**:
-     - *"PollToll's DuckDB Change Ledger tracks EPIC lineage across the entire constituency before running anomaly math. It proves **338 of those 340 voters were NOT deleted**—their EPIC IDs moved intact to newly created Wing-B (`PS-110`). True net deletion is **1.47%**, right inside the historical baseline!"*
-  3. **Click the `PS-302` Outlier Flag (`RULE_HIST_DEL_SPIKE@1.0.0`)**:
-     - *"Now contrast `PS-302`: **9.8% net deletions** (`95% Wilson CI [8.0%, 11.9%]`), `+8.4σ` above its multi-cycle baseline with **zero** cross-booth transfers."*
-     - **Point to the 5-Part Evidence Card**: *"Notice our strict neutrality guardrail: PollToll shows (1) exact change math, (2) versioned rule `polltoll-rules@1.0.0`, (3) **innocent administrative explanations** like municipal redevelopment, (4) **missing non-public evidence**—such as BLO house-to-house checklists and Rule 21-A notices that public PDFs cannot prove—and (5) the authorized human review step."*
-  4. **Click Ledger Filter pill `BOOTH_TRANSFERRED`, then click `Inspect EPIC` on `SYN-GJ-109-0042`** (jumps smoothly into **PollToll Verify**!).
+1. **Start the app:** double-click **Start PollToll** in the `KRMWin` folder. Wait for `http://localhost:3000` to load. Start it once while online so the fonts are cached.
+2. **Pre-warm the AI cache** so Hindi and Gujarati answers return instantly even if Wi-Fi drops: `python3 scripts/prewarm_demo_cache.py`.
+3. **Browser:** full screen on `http://localhost:3000`, Dashboard open, language **EN**, zoom 110% for the projector.
+4. **Review step:** PS-302 already has a reviewer note (CORR-0006) in the demo data. For the live review, use the **PS-203** (crowded address) flag so judges see the open-flag count drop.
+5. *(Optional)* Let judges try it on their phones: `cloudflared tunnel --url http://localhost:3000` and show the QR code.
 
 ---
 
-### Act III — Plane 3: Multilingual Citizen Assistant & Viral Claim Checker (`1:50 – 2:45`)
-- **Screen**: [VerifyPortal.tsx](file:///Users/root1/KRMWin/frontend/src/components/VerifyPortal.tsx) (`PollToll Verify` tab).
-- **Clicks & Narration (Yash / Vidhaath)**:
-  1. **Citizen Lookup + Gujarati / Hindi Switch**:
-     - *"For ordinary citizens, PollToll Verify is free in **English**, **Hindi (हिन्दी)**, and **Gujarati (ગુજરાતી)**."*
-     - Toggle the top language pill `English` → `ગુજરાતી` (or `हिन्दी`). Show `SYN-GJ-109-0042`'s 4-cycle timeline (`2024 Final` → `2026 Draft`) proving their registration is **Active & Transferred to `PS-110`**, plus click **Listen / जवाब सुनें / જવાબ સાંભળો** (or Mic) for voice accessibility and official ECI **Form 6 / Form 7 / Form 8** guidance.
-  2. **3-Bucket Viral Claim Checker**:
-     - Click preset **"Booth 109 '340 Vanished Voters' Rumor"** → click **Check Claim**.
-     - *"Instead of a black-box 'True/False' label, PollToll decomposes any viral claim from any political side into three auditable columns: **Verified from Published Roll** (340 booth outflow), **Disputed Interpretation** (338 moved intact to `PS-110`), and **Cannot Be Proven from Public Data** (whether physical voter slips reached every household), complete with confidence score and reasoning steps."*
+## 3. Minute-by-Minute Script
+
+### Act I — Hook on the Dashboard (`0:00 – 0:40`, Yash)
+- **Screen:** Dashboard. The roll arithmetic is the first thing on screen.
+- *"A viral message says 340 voters vanished from Booth 109 overnight. Citizens panic, and nobody can audit thousands of roll PDFs by hand."*
+- Point at the big line: **7,809 − 241 + 236 = 7,804**. *"This is the whole revision in one line. And underneath: 338 people moved to another booth and 90 entries were corrected. A naive script would have counted all of them as deleted."*
+- *"We checked what the Election Commission's own ERONET already does and we don't rebuild it. PollToll audits what gets published, from the outside."*
+
+### Act II — Module 1 (anomaly detection) and Module 2 (plain-language explanations) (`0:40 – 1:50`, Vidhaath)
+1. **Sidebar → Comparison.** It opens on PS-109 with the old roll on the left and the new roll on the right.
+   - *"Each row is one voter. Left is where they were, right is where they are now. Teal means moved. These people weren't removed; they're in PS-110 with new serial numbers. 352 names left PS-109; 338 of them are right here. Only 14 were actually removed. That's 1.47%, which is normal for this booth."*
+   - Click the **PS-104** booth button: struck-through red names against empty "removed" slots. *"Here the removals are real."*
+2. **Sidebar → Flags.** Click the **PS-302** flag.
+   - *"PS-302 lost 9.8% of its voters, against a history of about 1.5%. That's 18.5 standard deviations, with zero transfers to explain it."*
+   - Walk the 5-part card quickly: what changed, the exact rule (`RULE_HIST_DEL_SPIKE@1.0.0`), **innocent explanations** (redevelopment, backlog clearance), **what public data can't prove** (Rule 21-A notices, BLO checklists) and the next step. *"94% confidence, and it tells you why. We never say fraud. We say: here's what a person should check next."*
+
+### Act III — Module 4 (claim checker) and Module 3 (citizen assistant) (`1:50 – 2:45`, Yash)
+- **Sidebar → Citizen check.**
+1. **Claim checker:** pick the preset **"Booth 109 '340 Vanished Voters' Rumor"** → Check Claim.
+   - *"Three columns: what the roll math verifies (352 names left PS-109), what is disputed (338 of them moved intact), and what public data can't prove (whether every household got a slip about the room change). Claims from every side get the same treatment."*
+2. **Citizen assistant:** switch the language to **ગુ** or **हि**, click the **Booth Split (PS-109 → PS-110)** chip (`SYN-GJ-109-0042`), ask, then press **Listen Aloud**.
+   - *"A voter in Booth 109 sees her name is safe: active, moved to PS-110, with her new serial number, in her own language, by voice. It also tells her which official form to use if something's wrong."*
+
+### Act IV — Human review and the signed report (`2:45 – 3:40`, Vidhaath)
+1. **Sidebar → Review.** Select the **PS-203** flag, choose "Request Authorized BLO/ERO Check", type a short neutral note, and click **Append to Ledger**.
+   - *"A person decides, not the software. The note is appended to a hash-chained log, so the original flag is never overwritten. Watch the open-review count drop."*
+2. **Sidebar → Report.** Click **Re-Issue Signed Receipt**: green, 4 of 4 checks pass, and your new note is in the chain.
+3. **The wow moment:** click **Simulate 1-Byte Tamper Attack**. It turns red: SHA-256 mismatch and the Ed25519 signature is rejected. Click **Restore Authentic Receipt** to turn it green again.
+   - *"Any newsroom or court can verify this in their own browser, without trusting us."*
+
+### Act V — Rules recap and close (`3:40 – 4:00`, Yash)
+- *"Every rule in the brief is built into the product: synthetic data only, so uploads without SYN- IDs are rejected. Flags are for human review, never accusations. Every output shows its reasoning and confidence, including the citizen lookup. And claims from every side go through the same checker."*
+- **Closing line:** *"Citizens check their names for free. Observers, universities and newsrooms license the audit and the signed reports. We sell evidence, not accusations."*
 
 ---
 
-### Act IV — Plane 2 & 4: `Ed25519` Tamper Simulator & Infrastructure Close (`2:45 – 4:00`)
-- **Screen**: Switch to `PollToll Assurance` ([AssuranceCenter.tsx](file:///Users/root1/KRMWin/frontend/src/components/AssuranceCenter.tsx)), then `Infra / API & CLI` ([InfraConsole.tsx](file:///Users/root1/KRMWin/frontend/src/components/InfraConsole.tsx)).
-- **Clicks & Narration**:
-  1. **Show Green `VERIFIED` WebCrypto Badge (`PollToll Assurance`)**:
-     - *"Why should a court, newsroom, or university trust our software? Every PollToll run emits an **Independent Audit Receipt** containing canonical `SHA-256` snapshot hashes, rule version, and append-only correction history, signed with **`Ed25519`** and verified right inside the browser's WebCrypto engine."*
-  2. **THE WOW MOMENT — Click the Red `Simulate 1-Byte Tamper Attack` Button**:
-     - Watch the badge flip instantly to **RED `SIGNATURE INVALID — PAYLOAD TAMPERED`** when `deleted` is forged without the private key! Click **Restore Authentic Receipt** to flip back to green.
-     - Scroll down 2 seconds to flash the **Cited ERONET Feature-by-Feature Gap Matrix** embedded directly in the console.
-  3. **Close on `Infra / API & CLI` (`3:35 – 4:00`)**:
-     - Click `Infra / API & CLI` → point to **Live CSV Snapshot Ingestion** (`SHA-256` content-addressed), **Headless Auditor CLI** ([polltoll_cli.py](file:///Users/root1/KRMWin/backend/polltoll_cli.py)), and our **Multi-Cloud Quota Shield** (`Gemini + Groq LPU + DuckDB Cache`).
-     - **Closing Line**: *"Citizens get PollToll Verify free; election-observation groups, universities, and civic foundations license PollToll Audit & Assurance infrastructure. We sell evidence and accountability—not accusations."*
+## 4. Tough Judge Q&A
 
----
-
-## 4. Tough Judge Q&A Cheat Sheet
-
-| Likely Judge Question | Crisp Winning Answer |
+| Likely question | Answer |
 | :--- | :--- |
-| **"Doesn't ECI's ERONET already detect duplicates and manage rolls?"** | *"Yes—and we explicitly cite ERONET's UNPER and DSE/PSE capabilities in [ERONET_GAP_ANALYSIS.md](file:///Users/root1/KRMWin/docs/ERONET_GAP_ANALYSIS.md). ERONET is an internal operational workflow for EROs. PollToll is **external, independent post-publication change-audit infrastructure** with cross-booth split reconciliation, 95% confidence intervals, explicit missing-evidence disclosure, and client-verifiable `Ed25519` audit receipts. Note we also state clearly that public docs alone cannot prove what internal scripts ECI runs privately."* |
-| **"How do you prevent your AI from hallucinating or being used as a political weapon?"** | *"Three hard architectural controls: (1) **Zero-LLM audit math**—all diffs, Z-scores, and Wilson CIs are computed deterministically in DuckDB (`polltoll-rules@1.0.0`); (2) **Mandatory 3-bucket & 5-part schemas** forcing innocent explanations and 'Cannot Be Proven from Public Data' on every flag; (3) **Regex & schema neutrality sanitizers** ([`sanitize_neutral_text`](file:///Users/root1/KRMWin/backend/app/services/ai_explainer.py#L472-L476)) blocking accusatory verdicts."* |
-| **"Did you use any real voter data or scrape ECI PDFs?"** | *"Zero real voter PII. Every record is 100% deterministic synthetic data (`SYN-GJ-*`), and our ingestion endpoint ([ingest.py](file:///Users/root1/KRMWin/backend/app/engine/ingest.py)) enforces a hard guardrail rejecting any upload whose IDs lack the `SYN-` prefix."* |
-| **"What happens if an LLM API goes down or hits rate limits during an election?"** | *"Show the `Infra / API & CLI` tab: core auditing uses 0 LLM tokens, repeat queries hit our persistent `SHA-256` DuckDB cache in `<2 ms`, live calls fail over across Gemini + Groq LPU pools, and even total cloud blackout falls back seamlessly to localized EN/HI/GU deterministic responses."* |
+| **"Doesn't ECI's ERONET already do this?"** | *"ERONET is the Election Commission's internal registration system, and it already does duplicate photo and demographic matching. We don't rebuild that. PollToll is independent and works after publication: it compares published versions, reconciles booth splits, tests changes against history with confidence intervals, and signs receipts anyone can verify. Public documents can't tell us what ERONET runs internally, and we say so."* See [ERONET_GAP_ANALYSIS.md](./ERONET_GAP_ANALYSIS.md). |
+| **"How do you stop the AI hallucinating or being used as a political weapon?"** | *"The audit maths uses no AI: diffs, z-scores and Wilson intervals are plain code with a versioned rule pack (`polltoll-rules@1.0.0`). AI only writes the plain-language explanations, and every one is forced into the 5-part and 3-column formats, which always include innocent explanations and what can't be proven. A neutrality filter (`sanitize_neutral_text` in `backend/app/services/ai_explainer.py`) blocks accusatory wording."* |
+| **"Did you use real voter data?"** | *"None. Every record is synthetic (`SYN-GJ-*`), and the upload endpoint (`backend/app/engine/ingest.py`) rejects any file whose IDs don't start with SYN-. You can see it reject one on the Dashboard."* |
+| **"What if the AI API goes down on election day?"** | *"Core auditing uses no AI at all. Repeat questions come from a local cache, live calls fail over between Gemini and Groq, and if everything is offline, the citizen assistant and claim checker fall back to built-in EN/HI/GU answers. The CLI (`backend/polltoll_cli.py`) runs and verifies audits fully offline."* |
+| **"Your PS-109 numbers: is it 340 or 352?"** | *"340 is what the rumour claims. The roll shows 352 names left PS-109: 338 moved to PS-110 and 14 were removed. The checker verifies the real count instead of repeating the rumour's number."* |
 
 ---
 
-## 5. Storyboard for Your 45–90 Second Content Video (Deliverable B)
+## 5. Storyboard for the 45–90 Second Video (Deliverable B)
 
 > [!TIP]
-> The prompt requires: **(1) Hook in first 5s**, **(2) Behind-the-scenes of Vidhaath & Yash building**, **(3) Short product demo**, and **(4) Explicit AI used in making the video** (e.g., AI voiceover, AI auto-captions, or AI B-roll/animation).
+> The brief requires: **(1)** a hook in the first 5 seconds, **(2)** behind-the-scenes of the team building, **(3)** a short product demo, and **(4)** AI used in making the video (AI voiceover, auto-captions, AI visuals or AI editing). Put an on-screen credit for the AI tools you used.
 
-| Timestamp | Visual Shot | Voiceover / On-Screen Auto-Caption |
+| Timestamp | Visual | Voiceover / captions |
 | :--- | :--- | :--- |
-| **`0:00 – 0:05` (The 5s Hook)** | Fast zoom on a dramatic mock WhatsApp message: *"340 VOTERS VANISHED IN BOOTH 109?!"* → Smash-cut to Vidhaath/Yash looking at camera. | *"When electoral rolls change by millions of names, rumours travel faster than facts—and nobody can audit the math."* |
-| **`0:05 – 0:20` (Behind the Scenes + A2A Twist)** | Over-the-shoulder clip of Vidhaath & Yash coding side-by-side, whiteboard/wireframe ([polltoll_infrastructure_wireframe.html](file:///Users/root1/.gemini/antigravity/brain/545e6cb4-5406-4bc1-9858-1ab1245bd504/polltoll_infrastructure_wireframe.html)), and a quick shot of your two Antigravity agents messaging each other on GitHub Issue `#1`! | *"During this hackathon, we—and our two synced AI coding agents—checked ECI's ERONET docs first, and built what ERONET isn't: **PollToll**, independent electoral change-audit infrastructure."* |
-| **`0:20 – 0:45` ( Crisp 3-Shot Product Demo)** | **Shot 1**: `PS-109` vs `PS-302` chart + 5-part explanation card.<br>**Shot 2**: Toggle `English → ગુજરાતી / हिन्दी` on **PollToll Verify** + 3-bucket Claim Checker.<br>**Shot 3**: Click **Simulate 1-Byte Tamper Attack** → flashes RED `SIGNATURE INVALID`! | *"PollToll reconciles innocent booth splits, flags real statistical outliers with 95% confidence intervals, answers citizens by voice in English, Hindi, and Gujarati, and signs every audit with client-verifiable Ed25519 cryptography."* |
-| **`0:45 – 0:58` (Close + AI Credit Tag)** | Split screen of CLI terminal + Control Console + closing title card: **PollToll — Evidence & Accountability, Not Accusations** *(Small footer badge: "Edited with AI voiceover & AI auto-captions")*. | *"Free verification for every citizen. Cryptographic assurance for every observer. PollToll."* |
+| **`0:00 – 0:05` Hook** | Fast zoom on a mock WhatsApp forward: *"340 VOTERS VANISHED IN BOOTH 109?!"*, then smash-cut to Vidhaath and Yash. | *"When voter lists change by lakhs of names, rumours travel faster than facts."* |
+| **`0:05 – 0:20` Behind the scenes** | Coding side by side, the whiteboard, and the two AI coding agents messaging each other on GitHub Issue #1. | *"In 24 hours we built PollToll, an independent audit for electoral rolls."* |
+| **`0:20 – 0:45` Demo, 3 shots** | **1:** Comparison page, PS-109 rows in teal: moved, not removed. **2:** PS-302 flag card with +18.5σ, then the Gujarati citizen answer read aloud. **3:** Report → Simulate Tamper turns red. | *"PollToll separates booth moves from real removals, flags only true outliers with confidence levels, answers citizens by voice in English, Hindi and Gujarati, and signs every audit so anyone can check it."* |
+| **`0:45 – 0:58` Close** | Dashboard roll arithmetic, then the title card **PollToll — Evidence, not accusations**, with a footer credit: *"Voiceover and captions made with AI"*. | *"Free checks for every citizen. Signed evidence for every observer. PollToll."* |

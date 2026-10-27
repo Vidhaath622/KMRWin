@@ -7,7 +7,7 @@
 ## Core Infrastructure Planes
 
 1. **`PollToll Audit` (Institutional Change-Audit Plane)**
-   - **Electoral Change Ledger (`DuckDB`)**: Row- and booth-level deterministic diff across snapshots (`v2024_final` → `v2025_draft` → `v2025_final` → `v2026_draft`), classifying every record into `ADDED`, `DELETED`, `MODIFIED`, or cross-booth `BOOTH_TRANSFERRED` (e.g., proving 338 of 340 outflows from `PS-109` moved intact to `PS-110`).
+   - **Electoral Change Ledger (`DuckDB`)**: Row- and booth-level deterministic diff across snapshots (`v2024_final` → `v2025_draft` → `v2025_final` → `v2026_draft`), classifying every record into `ADDED`, `DELETED`, `MODIFIED`, or cross-booth `BOOTH_TRANSFERRED` (e.g., proving 338 of the 352 entries that left `PS-109` moved intact to `PS-110`; only 14 were removed).
    - **Historical-Baseline Statistical Engine**: Evaluates net booth rates against multi-cycle baselines using **95% Wilson confidence intervals**, Z-scores, and versioned deterministic rules (`polltoll-rules@1.0.0`).
    - **5-Part Evidence Schema**: Every flag discloses *(1) What changed*, *(2) Exact rule & formula triggered*, *(3) Innocent administrative explanations*, *(4) Missing non-public evidence*, and *(5) Next verification step*.
 2. **`PollToll Assurance` (Zero-Trust Attestation Plane)**

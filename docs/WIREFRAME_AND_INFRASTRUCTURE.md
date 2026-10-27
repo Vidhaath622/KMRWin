@@ -19,6 +19,8 @@ flowchart LR
 
 ## 2. Control-Plane Wireframe Layout (4 Planes)
 
+> **Note (UI v2):** the console now uses a left sidebar with Dashboard, Comparison, Flags, Review, Report and Citizen check. The planes below map onto it: Audit → Dashboard + Comparison + Flags, the reviewer form → Review, Assurance → Report, Verify → Citizen check, and CSV ingestion moved onto the Dashboard. Numbers below are the live values for `v2025_final → v2026_draft`.
+
 ### Global Protocol Top Bar (Persistent Across All Planes)
 ```text
 +---------------------------------------------------------------------------------------------------+
@@ -35,14 +37,14 @@ flowchart LR
 | SNAPSHOT DIFF BAR:  [From: v2025_final (SHA256: ...)]  <-->  [To: v2026_draft (SHA256: ...)]      |
 +----------------+---------------+----------------+-------------------+--------------+--------------+
 | Electors       | Additions (+) | Net Deletions  | Reconciled Splits | Modified (Δ) | Rule Flags   |
-| 7,690 -> 7,764 | +233          | -245           | 338 (PS109->PS110)| 89           | 6 Triggered  |
+| 7,809 -> 7,804 | +236          | -241           | 338 (PS109->PS110)| 90           | 6 Triggered  |
 +----------------+---------------+----------------+-------------------+--------------+--------------+
 | [Chart A: Raw Drop % vs Reconciled Net Deletion %] | [Chart B: Stacked Booth Change Composition]  |
-|   Shows PS-109 36% raw drop -> 0.21% net deletion  |   Added / Transferred / Modified / Deleted   |
+|   Shows PS-109 37% raw drop -> 1.47% net deletion  |   Added / Transferred / Modified / Deleted   |
 +----------------------------------------------------+----------------------------------------------+
 | LEFT RAIL: VERSIONED RULE QUEUE (5/12 Cols)        | RIGHT PANE: 5-PART EVIDENCE BRIEF (7/12)     |
-| - [HIGH] PS-302 RULE_HIST_DEL_SPIKE@1.0.0 (+6.4σ)  | - Uncertainty Box: Point, 95% CI, Baseline, n|
-| - [HIGH] PS-104 RULE_HIST_DEL_SPIKE@1.0.0 (+6.9σ)  | - 1. What Changed (+ Clickable Sample EPICs) |
+| - [HIGH] PS-302 RULE_HIST_DEL_SPIKE@1.0.0 (+18.5σ) | - Uncertainty Box: Point, 95% CI, Baseline, n|
+| - [HIGH] PS-104 RULE_HIST_DEL_SPIKE@1.0.0 (+23.1σ) | - 1. What Changed (+ Clickable Sample EPICs) |
 | - [MOD]  PS-203 RULE_HOUSEHOLD_DENSITY@1.0.0       | - 2. Exact Rule & Mathematical Formula       |
 | - [MOD]  PS-207 RULE_AGE_COHORT_IMPLAUSIBLE@1.0.0  | - 3. Innocent Administrative Explanations    |
 | - [MOD]  PS-305 RULE_LEXICAL_DUP_CLUSTER@1.0.0     | - 4. Missing Non-Public Evidence             |
