@@ -21,6 +21,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import io
+import os
 import pathlib
 import random
 from typing import Any
@@ -29,7 +30,13 @@ import duckdb
 
 from app.models import SnapshotMeta
 
-DATA_DIR = pathlib.Path(__file__).resolve().parents[2] / "data"
+# Where the DuckDB file and signing key live. Serverless hosts (Vercel) only allow
+# writes under /tmp, so the location can be overridden; locally it stays backend/data.
+_DEFAULT_DATA_DIR = pathlib.Path(__file__).resolve().parents[2] / "data"
+DATA_DIR = pathlib.Path(
+    os.environ.get("POLLTOLL_DATA_DIR")
+    or ("/tmp/polltoll-data" if os.environ.get("VERCEL") else str(_DEFAULT_DATA_DIR))
+)
 DB_PATH = DATA_DIR / "polltoll_synthetic.duckdb"
 
 BOOTHS: list[dict[str, Any]] = [

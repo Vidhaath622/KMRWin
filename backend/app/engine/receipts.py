@@ -255,7 +255,7 @@ def _git_commit_short() -> str:
     try:
         return subprocess.check_output(
             ["git", "rev-parse", "--short", "HEAD"],
-            cwd=str(DATA_DIR.parents[1]),
+            cwd=str(pathlib.Path(__file__).resolve().parents[3]),
             text=True,
         ).strip()
     except Exception:
