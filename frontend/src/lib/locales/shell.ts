@@ -110,6 +110,9 @@ const en = {
   printedRoll: "Electoral roll",
   loading: "Lining up the two rolls…",
   openReview: "Review this flag",
+  reviewerKeyLabel: "Reviewer key",
+  reviewerKeyPlaceholder: "Needed on the public site",
+  reviewerKeyHint: "Only authorised reviewers can add to the audit log. The key is kept for this tab only.",
 };
 
 export const SHELL_LOCALE: Dict<typeof en> = {
@@ -209,6 +212,9 @@ export const SHELL_LOCALE: Dict<typeof en> = {
     printedRoll: "मतदाता सूची",
     loading: "दोनों सूचियों का मिलान हो रहा है…",
     openReview: "इस फ़्लैग की समीक्षा करें",
+    reviewerKeyLabel: "समीक्षक कुंजी",
+    reviewerKeyPlaceholder: "सार्वजनिक साइट पर आवश्यक",
+    reviewerKeyHint: "केवल अधिकृत समीक्षक ऑडिट लॉग में जोड़ सकते हैं। कुंजी केवल इस टैब में रखी जाती है।",
   },
   gu: {
     brandSub: "મતદાર યાદી ઓડિટ",
@@ -305,5 +311,8 @@ export const SHELL_LOCALE: Dict<typeof en> = {
     printedRoll: "મતદાર યાદી",
     loading: "બંને યાદીઓનો મેળાપ થઈ રહ્યો છે…",
     openReview: "આ ફ્લેગની સમીક્ષા કરો",
+    reviewerKeyLabel: "સમીક્ષક કી",
+    reviewerKeyPlaceholder: "જાહેર સાઇટ પર જરૂરી",
+    reviewerKeyHint: "ફક્ત અધિકૃત સમીક્ષકો ઓડિટ લોગમાં ઉમેરી શકે છે. કી ફક્ત આ ટેબમાં રાખવામાં આવે છે.",
   },
 };

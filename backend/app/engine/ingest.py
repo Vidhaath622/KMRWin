@@ -24,10 +24,12 @@ class IngestSnapshotRequest(BaseModel):
     roll_type: str = Field(default="SUPPLEMENT_CONSOLIDATED")
     base_version_id: str | None = Field(
         default="v2026_draft",
+        max_length=36,
         description="Optional existing snapshot to apply CSV delta rows onto (or null for standalone full CSV)",
     )
     csv_payload: str = Field(
         min_length=15,
+        max_length=2_000_000,
         description="CSV with columns: action(ADD|DELETE|MODIFY),epic_id,booth_id,elector_name,relation_name,gender,age,house_no,reason_code",
     )
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   ArrowRightLeft,
@@ -23,7 +23,13 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { appendReviewerCorrection } from "@/lib/api";
+import {
+  appendReviewerCorrection,
+  getReviewerKey,
+  readableApiError,
+  setReviewerKey,
+} from "@/lib/api";
+import { SHELL_LOCALE } from "@/lib/locales/shell";
 import {
   CHANGE_TYPE_LABELS,
   fmt,
@@ -106,6 +112,12 @@ export default function AuditWorkspace({
   const [reviewRef, setReviewRef] = useState("");
   const [savingNote, setSavingNote] = useState(false);
   const [noteSavedBanner, setNoteSavedBanner] = useState<string | null>(null);
+  const [noteError, setNoteError] = useState(false);
+  const [reviewerKey, setReviewerKeyState] = useState("");
+  const shellT = getDict(SHELL_LOCALE, language);
+  useEffect(() => {
+    setReviewerKeyState(getReviewerKey());
+  }, []);
 
   const selectedFlag: AnomalyFlag | null = useMemo(() => {
     if (!diffData || diffData.flags.length === 0) return null;
@@ -143,6 +155,8 @@ export default function AuditWorkspace({
     if (!selectedFlag || reviewNote.trim().length < 5) return;
     setSavingNote(true);
     setNoteSavedBanner(null);
+    setNoteError(false);
+    setReviewerKey(reviewerKey.trim());
     try {
       const ev = await appendReviewerCorrection({
         flag_id: selectedFlag.flag_id,
@@ -161,8 +175,9 @@ export default function AuditWorkspace({
       );
       onRefreshDiff();
     } catch (err) {
+      setNoteError(true);
       setNoteSavedBanner(
-        fmt(auditT.formErrorFailed, { error: String(err) })
+        fmt(auditT.formErrorFailed, { error: readableApiError(err) })
       );
     } finally {
       setSavingNote(false);
@@ -735,8 +750,27 @@ export default function AuditWorkspace({
                         {savingNote ? auditT.formSubmittingBtn : auditT.formSubmitBtn}
                       </button>
                     </div>
+                    <label className="block">
+                      <span className="mb-1 block text-[11px] font-medium text-slate-600">
+                        {shellT.reviewerKeyLabel}
+                      </span>
+                      <input
+                        type="password"
+                        autoComplete="off"
+                        value={reviewerKey}
+                        onChange={(e) => setReviewerKeyState(e.target.value)}
+                        placeholder={shellT.reviewerKeyPlaceholder}
+                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs"
+                      />
+                      <span className="mt-1 block text-[11px] text-slate-500">{shellT.reviewerKeyHint}</span>
+                    </label>
                     {noteSavedBanner && (
-                      <div className="rounded bg-emerald-100 px-3 py-1.5 text-xs font-mono text-emerald-900">
+                      <div
+                        role={noteError ? "alert" : "status"}
+                        className={`rounded px-3 py-1.5 text-xs ${
+                          noteError ? "bg-removed-soft text-removed" : "bg-emerald-100 font-mono text-emerald-900"
+                        }`}
+                      >
                         {noteSavedBanner}
                       </div>
                     )}

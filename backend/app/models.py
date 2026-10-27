@@ -138,11 +138,11 @@ class CorrectionEvent(BaseModel):
 
 
 class AppendCorrectionRequest(BaseModel):
-    flag_id: str
-    reviewer_role: str = Field(default="Independent Civic Auditor")
+    flag_id: str = Field(min_length=3, max_length=64)
+    reviewer_role: str = Field(default="Independent Civic Auditor", max_length=80)
     action: Literal["EVIDENCE_NOTE_ADDED", "MARKED_EXPLAINED_ADMIN_SHIFT", "ESCALATED_FOR_FIELD_CHECK"]
     note: str = Field(min_length=5, max_length=600)
-    evidence_reference: str | None = None
+    evidence_reference: str | None = Field(default=None, max_length=160)
 
 
 class AuditReceipt(BaseModel):
@@ -184,8 +184,8 @@ class ClaimFindingItem(BaseModel):
 
 class ClaimCheckRequest(BaseModel):
     claim_text: str = Field(min_length=6, max_length=800)
-    from_version: str = "v2025_final"
-    to_version: str = "v2026_draft"
+    from_version: str = Field(default="v2025_final", max_length=36)
+    to_version: str = Field(default="v2026_draft", max_length=36)
     language: LanguageCode = "en"
     use_llm: bool = Field(
         default=True,
@@ -224,11 +224,15 @@ class CitizenLookupResponse(BaseModel):
 
 
 class CitizenAssistantRequest(BaseModel):
-    query: str = Field(default="")
-    epic_id: str | None = None
+    query: str = Field(default="", max_length=600)
+    epic_id: str | None = Field(default=None, max_length=32)
     language: LanguageCode = "en"
-    audio_base64: str | None = Field(default=None, description="Optional base64 audio from browser mic")
-    audio_mime_type: str | None = Field(default=None, description="e.g. audio/webm or audio/wav")
+    audio_base64: str | None = Field(
+        default=None,
+        max_length=2_800_000,  # about 2 MB of audio, i.e. a short voice question
+        description="Optional base64 audio from browser mic",
+    )
+    audio_mime_type: str | None = Field(default=None, max_length=40, description="e.g. audio/webm or audio/wav")
     include_tts: bool = False
     use_llm: bool = Field(
         default=True,

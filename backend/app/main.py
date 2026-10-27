@@ -8,7 +8,8 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 import duckdb
-from fastapi import FastAPI, HTTPException, Query, Request, Response
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.data.generator import ensure_synthetic_database, list_snapshots
@@ -44,6 +45,14 @@ from app.services.ai_explainer import (
     get_ai_gateway_stats,
 )
 from app.services.gap_analysis import get_eronet_gap_matrix
+from app.security import (
+    MAX_BODY_BYTES,
+    REVIEWER_HEADER,
+    allowed_origins,
+    assert_neutral_note,
+    rate_limit,
+    require_reviewer,
+)
 
 _db_conn: duckdb.DuckDBPyConnection | None = None
 _db_init_lock = threading.Lock()
@@ -81,23 +90,35 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=allowed_origins(),
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Accept", REVIEWER_HEADER],
 )
 
 
 @app.middleware("http")
 async def add_protocol_headers(request: Request, call_next) -> Response:
+    # Reject oversized bodies before they are parsed (CSV uploads and voice clips are capped).
+    declared = request.headers.get("content-length")
+    if declared and declared.isdigit() and int(declared) > MAX_BODY_BYTES:
+        return JSONResponse(status_code=413, content={"detail": "Request body is too large."})
     response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["Cache-Control"] = response.headers.get("Cache-Control", "no-store")
     response.headers["X-PollToll-Protocol"] = "polltoll-audit-infra/0.1"
     response.headers["X-PollToll-Rule-Pack"] = RULE_PACK_VERSION
     response.headers["X-PollToll-Synthetic-Only"] = "true"
     return response
 
 
-@app.post("/api/v1/ingest/snapshot", response_model=SnapshotMeta)
+@app.post(
+    "/api/v1/ingest/snapshot",
+    response_model=SnapshotMeta,
+    dependencies=[Depends(rate_limit("write")), Depends(require_reviewer)],
+)
 def api_ingest_snapshot(req: IngestSnapshotRequest) -> SnapshotMeta:
     try:
         return ingest_csv_snapshot(get_db(), req)
@@ -204,12 +225,21 @@ def api_list_corrections() -> list[CorrectionEvent]:
     return list_corrections(get_db())
 
 
-@app.post("/api/v1/assurance/corrections", response_model=CorrectionEvent)
+@app.post(
+    "/api/v1/assurance/corrections",
+    response_model=CorrectionEvent,
+    dependencies=[Depends(rate_limit("write")), Depends(require_reviewer)],
+)
 def api_append_correction(req: AppendCorrectionRequest) -> CorrectionEvent:
+    assert_neutral_note(req.note, req.evidence_reference, req.reviewer_role)
     return append_correction_event(get_db(), req)
 
 
-@app.post("/api/v1/assurance/receipts/generate", response_model=AuditReceipt)
+@app.post(
+    "/api/v1/assurance/receipts/generate",
+    response_model=AuditReceipt,
+    dependencies=[Depends(rate_limit("receipt"))],
+)
 def api_generate_receipt(
     from_version: str = Query(default="v2025_final"),
     to_version: str = Query(default="v2026_draft"),
@@ -232,11 +262,19 @@ def api_citizen_lookup(epic_id: str, lang: str = Query(default="en")) -> Citizen
     return lookup_citizen_epic(get_db(), epic_id, lang=lang)
 
 
-@app.post("/api/v1/verify/assistant", response_model=CitizenAssistantResponse)
+@app.post(
+    "/api/v1/verify/assistant",
+    response_model=CitizenAssistantResponse,
+    dependencies=[Depends(rate_limit("ai"))],
+)
 def api_citizen_assistant(req: CitizenAssistantRequest) -> CitizenAssistantResponse:
     return assist_citizen(get_db(), req)
 
 
-@app.post("/api/v1/verify/claim-check", response_model=ClaimCheckResponse)
+@app.post(
+    "/api/v1/verify/claim-check",
+    response_model=ClaimCheckResponse,
+    dependencies=[Depends(rate_limit("ai"))],
+)
 def api_claim_check(req: ClaimCheckRequest) -> ClaimCheckResponse:
     return check_viral_claim(get_db(), req)

@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import { ArrowRight, FileUp, Loader2 } from "lucide-react";
-import { ingestSnapshot } from "@/lib/api";
+import { ingestSnapshot, readableApiError } from "@/lib/api";
 import { fmt, getDict } from "@/lib/locales/common";
 import { SHELL_LOCALE } from "@/lib/locales/shell";
 import { LanguageCode, LedgerDiffResponse, Section, SnapshotMeta } from "@/lib/types";
@@ -358,15 +358,7 @@ function RollSlot({
       onIngested(snap);
       setMsg({ ok: true, text: fmt(s.uploadedAs, { id: snap.version_id }) });
     } catch (err) {
-      // The API answers `API 400: {"detail": "..."}`; show only the human-readable detail.
-      const raw = String(err).replace(/^Error:\s*/, "");
-      let detail = raw;
-      try {
-        const json = JSON.parse(raw.slice(raw.indexOf("{")));
-        if (typeof json.detail === "string") detail = json.detail.replace(/`/g, "");
-      } catch {
-        /* keep raw text */
-      }
+      const detail = readableApiError(err);
       setMsg({ ok: false, text: fmt(s.uploadFailed, { error: detail }) });
     } finally {
       setBusy(false);

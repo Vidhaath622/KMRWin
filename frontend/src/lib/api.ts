@@ -9,6 +9,44 @@ import {
   SnapshotMeta,
 } from "./types";
 
+const REVIEWER_KEY_STORAGE = "polltoll.reviewerKey";
+
+/** Reviewer key for write actions; kept only for this browser tab (sessionStorage). */
+export function getReviewerKey(): string {
+  try {
+    return sessionStorage.getItem(REVIEWER_KEY_STORAGE) || "";
+  } catch {
+    return "";
+  }
+}
+
+export function setReviewerKey(value: string): void {
+  try {
+    if (value) sessionStorage.setItem(REVIEWER_KEY_STORAGE, value);
+    else sessionStorage.removeItem(REVIEWER_KEY_STORAGE);
+  } catch {
+    /* storage unavailable: key just isn't remembered */
+  }
+}
+
+function reviewerHeaders(): Record<string, string> {
+  const key = getReviewerKey();
+  return key ? { "X-PollToll-Reviewer-Key": key } : {};
+}
+
+/** Turns `API 403: {"detail":"..."}` into the human-readable detail. */
+export function readableApiError(err: unknown): string {
+  const raw = String(err).replace(/^Error:\s*/, "");
+  try {
+    const json = JSON.parse(raw.slice(raw.indexOf("{")));
+    if (typeof json.detail === "string") return json.detail.replace(/`/g, "");
+    if (Array.isArray(json.detail) && json.detail[0]?.msg) return String(json.detail[0].msg);
+  } catch {
+    /* not JSON */
+  }
+  return raw;
+}
+
 // Default to same-origin `/api/v1/*` proxied via Next.js rewrites (immune to browser extensions, CORS, and localhost/127.0.0.1 splits)
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
@@ -18,6 +56,9 @@ function xhrFallback<T>(url: string, init?: RequestInit): Promise<T> {
     xhr.open(init?.method || "GET", url, true);
     if (init?.body) {
       xhr.setRequestHeader("Content-Type", "application/json");
+    }
+    for (const [k, v] of Object.entries((init?.headers as Record<string, string>) || {})) {
+      xhr.setRequestHeader(k, v);
     }
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
@@ -97,6 +138,7 @@ export async function appendReviewerCorrection(payload: {
   return requestJson<CorrectionEvent>("/api/v1/assurance/corrections", {
     method: "POST",
     body: JSON.stringify(payload),
+    headers: reviewerHeaders(),
   });
 }
 
@@ -177,5 +219,6 @@ export async function ingestSnapshot(payload: {
   return requestJson<SnapshotMeta>("/api/v1/ingest/snapshot", {
     method: "POST",
     body: JSON.stringify(payload),
+    headers: reviewerHeaders(),
   });
 }
