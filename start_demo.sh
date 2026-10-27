@@ -15,6 +15,29 @@ for tool in uv node npm; do
   fi
 done
 
+# ---- Make sure the ports are free (stale dev servers are a common cause) ----
+free_port() {
+  local port="$1" pids
+  pids="$(lsof -ti :"$port" -sTCP:LISTEN 2>/dev/null || true)"
+  [ -z "$pids" ] && return 0
+  echo "⚠️  Port $port is already in use by:"
+  lsof -i :"$port" -sTCP:LISTEN 2>/dev/null | sed 's/^/     /'
+  if [ -t 0 ]; then
+    read "?   Kill it and continue? [y/N] " ans
+    if [[ "$ans" == [yY]* ]]; then
+      echo "$pids" | xargs kill 2>/dev/null || true
+      sleep 1
+      pids="$(lsof -ti :"$port" -sTCP:LISTEN 2>/dev/null || true)"
+      [ -n "$pids" ] && echo "$pids" | xargs kill -9 2>/dev/null || true
+      return 0
+    fi
+  fi
+  echo "❌ Free port $port first (e.g. 'lsof -ti :$port | xargs kill') and re-run."
+  exit 1
+}
+free_port 8000
+free_port 3000
+
 # ---- Install dependencies on first run (node_modules/.venv are not in git) --
 echo "📦 Syncing backend dependencies (uv sync) ..."
 (cd "$ROOT_DIR/backend" && uv sync)
