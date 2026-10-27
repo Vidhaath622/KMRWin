@@ -1,4 +1,8 @@
+<p align="center"><img src="frontend/public/polltoll-logo.svg" width="128" alt="PollToll logo"></p>
+
 # PollToll — Independent Electoral Change-Audit & Public Verification Infrastructure
+
+**Live demo:** https://polltoll-omega.vercel.app (backend API: https://polltoll-api.vercel.app/api/v1/health)
 
 > **Positioning:** PollToll is **trusted electoral change-audit infrastructure**—not a voter-registration clone of ECI's ERONET and not a partisan accusation website. Instead of managing registrations, PollToll independently tests whether changes across *published* electoral-roll snapshots are **traceable, baseline-calibrated, explainable with explicit uncertainty, and cryptographically reproducible**.
 

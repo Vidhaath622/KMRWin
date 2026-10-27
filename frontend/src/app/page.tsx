@@ -12,6 +12,7 @@ import {
 import AssuranceCenter from "@/components/AssuranceCenter";
 import AuditWorkspace from "@/components/AuditWorkspace";
 import Dashboard from "@/components/Dashboard";
+import Logo from "@/components/Logo";
 import RollCompare from "@/components/RollCompare";
 import VerifyPortal from "@/components/VerifyPortal";
 import { fetchAuditDiff, fetchSnapshots } from "@/lib/api";
@@ -24,24 +25,6 @@ const LANGS = [
   { code: "hi", label: "हि", name: "हिन्दी" },
   { code: "gu", label: "ગુ", name: "ગુજરાતી" },
 ] as const;
-
-/** The ink mark on a voter's fingernail: PollToll's logo. */
-function InkMark({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 28 32" aria-hidden className={className}>
-      <path
-        d="M4 13c0-6 4.5-10 10-10s10 4 10 10v12a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V13Z"
-        fill="#F4F2FD"
-      />
-      <path
-        d="M14 8v19"
-        stroke="#7056D9"
-        strokeWidth="4.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
 
 export default function PollTollControlPlane() {
   const [section, setSection] = useState<Section>("dashboard");
@@ -175,7 +158,7 @@ export default function PollTollControlPlane() {
       {/* Sidebar */}
       <aside className="z-20 bg-ink-950 text-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-[264px] lg:shrink-0 lg:flex-col">
         <div className="flex items-center gap-3 px-5 pb-3 pt-5 lg:pb-6 lg:pt-7">
-          <InkMark className="h-8 w-7" />
+          <Logo className="h-10 w-10 shrink-0" />
           <div>
             <div className="text-xl font-extrabold tracking-tight">
               {BRAND[language]}
