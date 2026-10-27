@@ -85,7 +85,7 @@ def ensure_correction_table(con: duckdb.DuckDBPyConnection, initial_flags: list[
                 else "FLAG_LOGGED"
             )
             note = (
-                "Automated cross-booth EPIC reconciliation verified 338/340 records moved intact to PS-110."
+                f"Automated cross-booth EPIC reconciliation verified {flg.affected_records_count} records moved intact to PS-110."
                 if flg.rule_id == "RULE_BOOTH_SPLIT_RECONCILE"
                 else f"System logged {flg.rule_id}@{flg.rule_version} for independent human review."
             )

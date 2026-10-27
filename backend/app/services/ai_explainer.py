@@ -618,15 +618,19 @@ def _deterministic_claim_response(
     if primary in ("PS-109", "PS-110"):
         b109 = booth_map["PS-109"]
         b110 = booth_map["PS-110"]
+        # All counts come from the ledger, so the claim checker can never disagree with the audit.
+        moved = b109.transferred_out_count
+        removed = b109.deleted_count
+        outflow = moved + removed
         labels = {
-            "en": "Raw Booth Outflow Verified (340); 'Vanished Voters' Claim Disputed — 338 Transferred Intact to PS-110",
-            "hi": "बूथ से 340 नाम हटना सत्यापित; 'गायब मतदाता' दावा खंडित — 338 मतदाता सुरक्षित रूप से PS-110 में स्थानांतरित",
-            "gu": "બૂથમાંથી 340 નામનો ઘટાડો ચકાસાયેલ; 'મતદારો ગાયબ' દાવો ખંડિત — 338 મતદારો સુરક્ષિત રીતે PS-110 માં તબદીલ",
+            "en": f"Raw Booth Outflow Verified ({outflow}); 'Vanished Voters' Claim Disputed — {moved} Transferred Intact to PS-110",
+            "hi": f"बूथ से {outflow} नाम हटना सत्यापित; 'गायब मतदाता' दावा खंडित — {moved} मतदाता सुरक्षित रूप से PS-110 में स्थानांतरित",
+            "gu": f"બૂથમાંથી {outflow} નામનો ઘટાડો ચકાસાયેલ; 'મતદારો ગાયબ' દાવો ખંડિત — {moved} મતદારો સુરક્ષિત રીતે PS-110 માં તબદીલ",
         }
         verified = {
             "en": [
                 ClaimFindingItem(
-                    statement=f"Booth PS-109 elector count decreased from {b109.electors_from} in `{req.from_version}` to {b109.electors_to} in `{req.to_version}` (340 gross outflow).",
+                    statement=f"Booth PS-109 elector count decreased from {b109.electors_from} in `{req.from_version}` to {b109.electors_to} in `{req.to_version}`: {outflow} entries left the booth and {b109.added_count} were added.",
                     evidence_source="Electoral Change Ledger (`PS-109` snapshot diff)",
                 ),
                 ClaimFindingItem(
@@ -636,7 +640,7 @@ def _deterministic_claim_response(
             ],
             "hi": [
                 ClaimFindingItem(
-                    statement=f"बूथ PS-109 में मतदाता संख्या `{req.from_version}` के {b109.electors_from} से घटकर `{req.to_version}` में {b109.electors_to} हुई (340 का सकल अंतर)।",
+                    statement=f"बूथ PS-109 में मतदाता संख्या `{req.from_version}` के {b109.electors_from} से घटकर `{req.to_version}` में {b109.electors_to} हुई: {outflow} प्रविष्टियाँ बूथ से निकलीं और {b109.added_count} जोड़ी गईं।",
                     evidence_source="Electoral Change Ledger (`PS-109` स्नैपशॉट तुलना)",
                 ),
                 ClaimFindingItem(
@@ -646,7 +650,7 @@ def _deterministic_claim_response(
             ],
             "gu": [
                 ClaimFindingItem(
-                    statement=f"બૂથ PS-109 માં મતદાર સંખ્યા `{req.from_version}` ના {b109.electors_from} થી ઘટીને `{req.to_version}` માં {b109.electors_to} થઈ (340 નો તફાવત).",
+                    statement=f"બૂથ PS-109 માં મતદાર સંખ્યા `{req.from_version}` ના {b109.electors_from} થી ઘટીને `{req.to_version}` માં {b109.electors_to} થઈ: {outflow} નોંધો બૂથમાંથી નીકળી અને {b109.added_count} ઉમેરાઈ.",
                     evidence_source="Electoral Change Ledger (`PS-109` સ્નેપશોટ સરખામણી)",
                 ),
                 ClaimFindingItem(
@@ -658,19 +662,19 @@ def _deterministic_claim_response(
         disputed = {
             "en": [
                 ClaimFindingItem(
-                    statement=f"338 of the 340 electors were NOT removed from the electoral roll; their EPIC IDs remain active in Wing-B (`PS-110`), leaving a true net deletion rate of {b109.net_effective_deletion_rate * 100:.2f}% (within historical baseline).",
+                    statement=f"{moved} of the {outflow} electors who left PS-109 were NOT removed from the electoral roll; their EPIC IDs remain active in Wing-B (`PS-110`). Only {removed} were removed, a true net deletion rate of {b109.net_effective_deletion_rate * 100:.2f}% (within historical baseline).",
                     evidence_source=f"95% Wilson CI [{b109.deletion_ci_lower_95 * 100:.2f}%, {b109.deletion_ci_upper_95 * 100:.2f}%] vs {b109.historical_deletion_baseline * 100:.2f}% baseline",
                 )
             ],
             "hi": [
                 ClaimFindingItem(
-                    statement=f"340 में से 338 मतदाताओं को मतदाता सूची से हटाया नहीं गया है; उनके EPIC नंबर विंग-B (`PS-110`) में सक्रिय हैं। वास्तविक शुद्ध विलोपन दर मात्र {b109.net_effective_deletion_rate * 100:.2f}% है।",
+                    statement=f"PS-109 से निकले {outflow} में से {moved} मतदाताओं को मतदाता सूची से हटाया नहीं गया है; उनके EPIC नंबर विंग-B (`PS-110`) में सक्रिय हैं। केवल {removed} हटाए गए; वास्तविक शुद्ध विलोपन दर मात्र {b109.net_effective_deletion_rate * 100:.2f}% है।",
                     evidence_source=f"95% Wilson CI [{b109.deletion_ci_lower_95 * 100:.2f}%, {b109.deletion_ci_upper_95 * 100:.2f}%]",
                 )
             ],
             "gu": [
                 ClaimFindingItem(
-                    statement=f"340 માંથી 338 મતદારોને મતદાર યાદીમાંથી કમી કરવામાં આવ્યા નથી; તેમના EPIC નંબરો વિંગ-B (`PS-110`) માં સક્રિય છે. વાસ્તવિક નેટ ડિલીશન દર માત્ર {b109.net_effective_deletion_rate * 100:.2f}% છે.",
+                    statement=f"PS-109 માંથી નીકળેલા {outflow} માંથી {moved} મતદારોને મતદાર યાદીમાંથી કમી કરવામાં આવ્યા નથી; તેમના EPIC નંબરો વિંગ-B (`PS-110`) માં સક્રિય છે. ફક્ત {removed} કમી થયા; વાસ્તવિક નેટ ડિલીશન દર માત્ર {b109.net_effective_deletion_rate * 100:.2f}% છે.",
                     evidence_source=f"95% Wilson CI [{b109.deletion_ci_lower_95 * 100:.2f}%, {b109.deletion_ci_upper_95 * 100:.2f}%]",
                 )
             ],
@@ -711,17 +715,17 @@ def _deterministic_claim_response(
             reasoning_steps={
                 "en": [
                     "Queried PS-109 outflow between v2025_final and v2026_draft.",
-                    "Joined missing PS-109 EPIC IDs against all active booths in AC-041 and matched 338 records in PS-110.",
+                    f"Joined missing PS-109 EPIC IDs against all active booths in AC-041 and matched {moved} records in PS-110.",
                     "Separated verified booth-level count shift from the disputed 'mass disenfranchisement' framing.",
                 ],
                 "hi": [
                     "v2025_final और v2026_draft के बीच PS-109 से निकले मतदाताओं की पहचान की।",
-                    "AC-041 के सभी सक्रिय बूथों में लापता PS-109 EPIC नंबरों का मिलान किया और PS-110 में 338 रिकॉर्ड पाए।",
+                    f"AC-041 के सभी सक्रिय बूथों में लापता PS-109 EPIC नंबरों का मिलान किया और PS-110 में {moved} रिकॉर्ड पाए।",
                     "सत्यापित बूथ-स्तरीय संख्यात्मक बदलाव को 'सामूहिक नाम कटने' की विवादित व्याख्या से अलग किया।",
                 ],
                 "gu": [
                     "v2025_final અને v2026_draft વચ્ચે PS-109 માંથી બહાર થયેલા મતદારોની ગણતરી કરી.",
-                    "AC-041 ના તમામ સક્રિય બૂથમાં ખૂટતા PS-109 EPIC નંબરો તપાસ્યા અને PS-110 માં 338 રેકોર્ડ્સ મેળવ્યા.",
+                    f"AC-041 ના તમામ સક્રિય બૂથમાં ખૂટતા PS-109 EPIC નંબરો તપાસ્યા અને PS-110 માં {moved} રેકોર્ડ્સ મેળવ્યા.",
                     "ચકાસાયેલ બૂથ-સ્તરીય સંખ્યાત્મક ફેરફારને વિવાદિત 'સામૂહિક મતદાર કમી' ના અર્થઘટનથી અલગ કર્યો.",
                 ],
             }[lang],

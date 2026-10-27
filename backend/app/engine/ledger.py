@@ -340,6 +340,78 @@ def _zero_bstat() -> dict[str, int]:
     }
 
 
+def _lookup_trace(
+    clean_epic: str,
+    snapshot_count: int,
+    history: list[dict[str, Any]],
+    status: str,
+) -> tuple[dict[str, str], dict[str, list[str]]]:
+    """Plain-language reasoning trace + confidence basis for a citizen lookup.
+
+    The lookup is an exact, deterministic ID match across published snapshots, so
+    what it states is certain; the trace says what it checked and what public roll
+    data cannot tell (for example, *why* an entry changed).
+    """
+    found_in = ", ".join(h["version_id"] for h in history) or "—"
+    prev = history[-2] if len(history) >= 2 else (history[-1] if history else None)
+    latest = history[-1] if history else None
+
+    step1 = {
+        "en": f"Searched all {snapshot_count} published roll snapshots for the exact ID {clean_epic}.",
+        "hi": f"सभी {snapshot_count} प्रकाशित सूची स्नैपशॉट में सटीक ID {clean_epic} खोजी गई।",
+        "gu": f"તમામ {snapshot_count} પ્રકાશિત યાદી સ્નેપશોટમાં ચોક્કસ ID {clean_epic} શોધવામાં આવી.",
+    }
+    step2 = {
+        "en": f"Found in: {found_in}." if history else "No snapshot contains this ID.",
+        "hi": f"इनमें मिला: {found_in}।" if history else "किसी भी स्नैपशॉट में यह ID नहीं है।",
+        "gu": f"આમાં મળ્યું: {found_in}." if history else "કોઈ સ્નેપશોટમાં આ ID નથી.",
+    }
+    if status == "ACTIVE_BOOTH_TRANSFERRED" and prev and latest:
+        step3 = {
+            "en": f"Booth changed from {prev['booth_id']} ({prev['version_id']}) to {latest['booth_id']} ({latest['version_id']}); the entry was not removed.",
+            "hi": f"बूथ {prev['booth_id']} ({prev['version_id']}) से बदलकर {latest['booth_id']} ({latest['version_id']}) हुआ; प्रविष्टि हटाई नहीं गई।",
+            "gu": f"બૂથ {prev['booth_id']} ({prev['version_id']}) થી બદલાઈને {latest['booth_id']} ({latest['version_id']}) થયું; નોંધ કમી કરાઈ નથી.",
+        }
+    elif status == "ACTIVE_MODIFIED" and prev and latest:
+        step3 = {
+            "en": f"Compared fields between {prev['version_id']} and {latest['version_id']}: age {prev['age']} → {latest['age']}, house {prev['house_no']} → {latest['house_no']}.",
+            "hi": f"{prev['version_id']} और {latest['version_id']} के बीच विवरण की तुलना: आयु {prev['age']} → {latest['age']}, मकान {prev['house_no']} → {latest['house_no']}।",
+            "gu": f"{prev['version_id']} અને {latest['version_id']} વચ્ચે વિગતોની સરખામણી: ઉંમર {prev['age']} → {latest['age']}, મકાન {prev['house_no']} → {latest['house_no']}.",
+        }
+    elif status == "DELETED_IN_DRAFT_SUPPLEMENT" and latest:
+        step3 = {
+            "en": f"Last present in {latest['version_id']} at {latest['booth_id']}; absent from the latest draft and not found at any other booth.",
+            "hi": f"अंतिम बार {latest['version_id']} में बूथ {latest['booth_id']} पर मौजूद; नवीनतम ड्राफ्ट में नहीं और किसी अन्य बूथ पर भी नहीं मिला।",
+            "gu": f"છેલ્લે {latest['version_id']} માં બૂથ {latest['booth_id']} પર હાજર; નવીનતમ ડ્રાફ્ટમાં નથી અને બીજા કોઈ બૂથ પર પણ મળ્યું નથી.",
+        }
+    elif status == "ACTIVE_UNCHANGED" and latest:
+        step3 = {
+            "en": f"Booth, serial, age and house are consistent across versions ({latest['booth_id']}, serial {latest['serial_no']}).",
+            "hi": f"बूथ, क्रम, आयु और मकान सभी संस्करणों में समान हैं ({latest['booth_id']}, क्रम {latest['serial_no']})।",
+            "gu": f"બૂથ, ક્રમ, ઉંમર અને મકાન તમામ સંસ્કરણોમાં સમાન છે ({latest['booth_id']}, ક્રમ {latest['serial_no']}).",
+        }
+    else:
+        step3 = {
+            "en": "This only covers the synthetic test rolls; it does not mean a person is unregistered in reality.",
+            "hi": "यह केवल सिंथेटिक परीक्षण सूचियों पर आधारित है; इसका अर्थ यह नहीं कि व्यक्ति वास्तव में पंजीकृत नहीं है।",
+            "gu": "આ ફક્ત સિન્થેટિક પરીક્ષણ યાદીઓ પર આધારિત છે; તેનો અર્થ એ નથી કે વ્યક્તિ ખરેખર નોંધાયેલ નથી.",
+        }
+    limit = {
+        "en": "Public roll data shows that an entry changed, not why; the official reason code and supplement list are the source for that.",
+        "hi": "सार्वजनिक सूची डेटा बताता है कि प्रविष्टि बदली, क्यों बदली यह नहीं; उसके लिए आधिकारिक कारण कोड और सप्लीमेंट सूची देखें।",
+        "gu": "જાહેર યાદીનો ડેટા બતાવે છે કે નોંધ બદલાઈ, શા માટે બદલાઈ તે નહીં; તે માટે સત્તાવાર કારણ કોડ અને સપ્લીમેન્ટ યાદી જુઓ.",
+    }
+    reasoning = {
+        lang: [step1[lang], step2[lang], step3[lang], limit[lang]] for lang in ("en", "hi", "gu")
+    }
+    basis = {
+        "en": "Exact ID match across published snapshots (deterministic, no AI involved).",
+        "hi": "प्रकाशित स्नैपशॉट में सटीक ID मिलान (निर्धारक, कोई AI उपयोग नहीं)।",
+        "gu": "પ્રકાશિત સ્નેપશોટમાં ચોક્કસ ID મેળ (નિર્ધારિત, કોઈ AI ઉપયોગ નહીં).",
+    }
+    return basis, reasoning
+
+
 def lookup_citizen_epic(con: duckdb.DuckDBPyConnection, query_epic: str, lang: str = "en") -> CitizenLookupResponse:
     """Traces a synthetic EPIC ID across all 4 published roll snapshots."""
     lang_code = normalize_lang(lang)
@@ -371,9 +443,14 @@ def lookup_citizen_epic(con: duckdb.DuckDBPyConnection, query_epic: str, lang: s
         """,
         [clean_epic],
     ).fetchall()
+    snapshot_count = con.execute("SELECT count(*) FROM snapshots").fetchone()[0]
 
     if not rows:
+        nf_basis, nf_reasoning = _lookup_trace(clean_epic, snapshot_count, [], "NOT_FOUND")
         return CitizenLookupResponse(
+            confidence_level=1.0,
+            confidence_basis=nf_basis,
+            reasoning_steps=nf_reasoning,
             found=False,
             epic_id=clean_epic,
             current_status="NOT_FOUND",
@@ -558,6 +635,7 @@ def lookup_citizen_epic(con: duckdb.DuckDBPyConnection, query_epic: str, lang: s
             }
             forms = []
 
+    basis, reasoning = _lookup_trace(clean_epic, snapshot_count, history, status)
     return CitizenLookupResponse(
         found=True,
         epic_id=clean_epic,
@@ -567,4 +645,7 @@ def lookup_citizen_epic(con: duckdb.DuckDBPyConnection, query_epic: str, lang: s
         plain_language_summary=summaries,
         official_next_steps=steps,
         relevant_eci_forms=forms,
+        confidence_level=1.0,
+        confidence_basis=basis,
+        reasoning_steps=reasoning,
     )

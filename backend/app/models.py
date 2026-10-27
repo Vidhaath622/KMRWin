@@ -217,6 +217,10 @@ class CitizenLookupResponse(BaseModel):
     plain_language_summary: dict[LanguageCode, str]
     official_next_steps: dict[LanguageCode, list[str]]
     relevant_eci_forms: list[str]
+    # Every output shows its reasoning and confidence (hackathon rule).
+    confidence_level: float = Field(default=1.0, ge=0.0, le=1.0)
+    confidence_basis: dict[LanguageCode, str] = Field(default_factory=dict)
+    reasoning_steps: dict[LanguageCode, list[str]] = Field(default_factory=dict)
 
 
 class CitizenAssistantRequest(BaseModel):

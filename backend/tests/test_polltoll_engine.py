@@ -54,6 +54,12 @@ def test_multilingual_citizen_lookup_and_claim_checker():
     c_data = c_res.json()
     assert c_data["current_status"] == "ACTIVE_BOOTH_TRANSFERRED"
     assert set(c_data["plain_language_summary"].keys()) == {"en", "hi", "gu"}
+    # Every output shows its reasoning and confidence
+    assert 0.0 <= c_data["confidence_level"] <= 1.0
+    assert set(c_data["reasoning_steps"].keys()) == {"en", "hi", "gu"}
+    assert any("PS-110" in step for step in c_data["reasoning_steps"]["en"])
+    nf = client.get("/api/v1/verify/citizen/SYN-GJ-999-9999").json()
+    assert nf["current_status"] == "NOT_FOUND" and len(nf["reasoning_steps"]["en"]) >= 3
 
     # Gujarati assistant response
     a_res = client.post(
@@ -75,6 +81,17 @@ def test_multilingual_citizen_lookup_and_claim_checker():
     assert len(cl_data["verified_facts"]) >= 1
     assert len(cl_data["disputed_interpretations"]) >= 1
     assert len(cl_data["unprovable_from_public_data"]) >= 1
+
+    # Deterministic claim checker quotes the same numbers as the change ledger
+    det = client.post(
+        "/api/v1/verify/claim-check",
+        json={"claim_text": "340 voters vanished overnight from Booth PS-109!", "language": "en", "use_llm": False},
+    ).json()
+    diff = client.get("/api/v1/audit/diff?from_version=v2025_final&to_version=v2026_draft").json()
+    b109 = next(b for b in diff["booth_summaries"] if b["booth_id"] == "PS-109")
+    outflow = b109["transferred_out_count"] + b109["deleted_count"]
+    assert f"{outflow} entries left the booth" in det["verified_facts"][0]["statement"]
+    assert str(b109["transferred_out_count"]) in det["overall_assessment_label"]
 
 
 def test_ed25519_audit_receipt_and_tamper_detection():
