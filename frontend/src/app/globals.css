@@ -4,12 +4,59 @@
 
 @layer base {
   body {
-    @apply bg-slate-100 text-slate-900 antialiased;
+    @apply bg-canvas text-slate-900 antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid #5a3bcb;
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+}
+
+@layer components {
+  /* A printed roll page: faint ruled lines like the official A4 roll sheets. */
+  .roll-sheet {
+    background-color: #ffffff;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 31px,
+      rgba(26, 20, 66, 0.045) 31px,
+      rgba(26, 20, 66, 0.045) 32px
+    );
+  }
+  .tabular {
+    font-variant-numeric: lining-nums;
+  }
+}
+
+/* The one orchestrated moment: the roll arithmetic settles in on load. */
+@keyframes settle {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.settle > * {
+  animation: settle 520ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.settle > *:nth-child(2) { animation-delay: 90ms; }
+.settle > *:nth-child(3) { animation-delay: 180ms; }
+.settle > *:nth-child(4) { animation-delay: 270ms; }
+.settle > *:nth-child(5) { animation-delay: 360ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .settle > * {
+    animation: none;
   }
 }
 
 @media print {
-  header,
+  aside,
   nav,
   button {
     display: none !important;

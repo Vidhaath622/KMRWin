@@ -80,9 +80,9 @@ export default function InfraConsole({
     <div className="space-y-8">
       {/* Infrastructure Overview Strip */}
       {quota && (
-        <div className="rounded-xl border border-indigo-200 bg-indigo-50/40 p-5 shadow-sm">
+        <div className="rounded-xl border border-ink-200 bg-ink-50/40 p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase text-indigo-800">
+            <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase text-ink-800">
               <Gauge className="h-4 w-4" /> {infraT.quotaShieldTitle}
             </div>
             <span className="rounded bg-slate-900 px-2.5 py-0.5 font-mono text-xs text-emerald-300">
@@ -90,7 +90,7 @@ export default function InfraConsole({
             </span>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4 text-xs">
-            <div className="rounded-lg border border-indigo-100 bg-white p-3">
+            <div className="rounded-lg border border-ink-100 bg-white p-3">
               <div className="text-slate-500">
                 {infraT.keyPoolLabel}
               </div>
@@ -100,20 +100,20 @@ export default function InfraConsole({
                 {quota.groq_keys_ready ?? 0}/{quota.groq_key_count ?? 0} Groq
               </div>
             </div>
-            <div className="rounded-lg border border-indigo-100 bg-white p-3">
+            <div className="rounded-lg border border-ink-100 bg-white p-3">
               <div className="text-slate-500">{infraT.cacheHitsLabel}</div>
               <div className="mt-0.5 font-mono text-base font-bold text-emerald-700">
                 {quota.metrics.cache_hits_saved} ({quota.cached_entries_in_duckdb}{" "}
                 stored)
               </div>
             </div>
-            <div className="rounded-lg border border-indigo-100 bg-white p-3">
+            <div className="rounded-lg border border-ink-100 bg-white p-3">
               <div className="text-slate-500">{infraT.fastpathLabel}</div>
-              <div className="mt-0.5 font-mono text-base font-bold text-indigo-700">
+              <div className="mt-0.5 font-mono text-base font-bold text-ink-700">
                 {quota.metrics.deterministic_fastpath_saved}
               </div>
             </div>
-            <div className="rounded-lg border border-indigo-100 bg-white p-3">
+            <div className="rounded-lg border border-ink-100 bg-white p-3">
               <div className="text-slate-500">{infraT.liveCallsLabel}</div>
               <div className="mt-0.5 font-mono text-base font-bold text-slate-900">
                 {quota.metrics.live_gemini_calls} /{" "}
@@ -125,8 +125,8 @@ export default function InfraConsole({
       )}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase text-indigo-700">
+        <div className="rounded-[20px] bg-white p-5 shadow-sheet">
+          <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase text-ink-700">
             <DatabaseZap className="h-4 w-4" /> {infraT.card1Tag}
           </div>
           <div className="mt-2 text-sm font-semibold text-slate-900">
@@ -137,8 +137,8 @@ export default function InfraConsole({
           </p>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase text-indigo-700">
+        <div className="rounded-[20px] bg-white p-5 shadow-sheet">
+          <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase text-ink-700">
             <Terminal className="h-4 w-4" /> {infraT.card2Tag}
           </div>
           <div className="mt-2 text-sm font-semibold text-slate-900">
@@ -149,8 +149,8 @@ export default function InfraConsole({
           </p>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase text-indigo-700">
+        <div className="rounded-[20px] bg-white p-5 shadow-sheet">
+          <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase text-ink-700">
             <Server className="h-4 w-4" /> {infraT.card3Tag}
           </div>
           <div className="mt-2 text-sm font-semibold text-slate-900">
@@ -163,9 +163,9 @@ export default function InfraConsole({
       </div>
 
       {/* Live Snapshot Ingestion Pipeline */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">
+      <div className="rounded-[20px] bg-white p-6 shadow-sheet space-y-5">
         <div>
-          <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-indigo-700">
+          <div className="flex items-center gap-2 text-xs font-mono font-boldr text-ink-700">
             <UploadCloud className="h-4 w-4" />
             {infraT.pipelineTag}
           </div>
@@ -238,7 +238,7 @@ export default function InfraConsole({
             <button
               type="submit"
               disabled={ingesting}
-              className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+              className="rounded-lg bg-ink-600 px-4 py-2 text-xs font-semibold text-white hover:bg-ink-700 disabled:opacity-50"
             >
               {ingesting
                 ? infraT.ingestingBtn
@@ -274,9 +274,9 @@ export default function InfraConsole({
 
       {/* Headless CLI & Programmatic REST SDK Snippets */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
+        <div className="rounded-[20px] bg-white p-5 shadow-sheet space-y-3">
           <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase text-slate-700">
-            <Terminal className="h-4 w-4 text-indigo-600" />
+            <Terminal className="h-4 w-4 text-ink-600" />
             {infraT.cliTitle}
           </div>
           <pre className="overflow-x-auto rounded-lg bg-slate-950 p-4 font-mono text-xs text-slate-200 leading-relaxed">
@@ -294,9 +294,9 @@ uv run python polltoll_cli.py verify-receipt audit.receipt.json`}
           </pre>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
+        <div className="rounded-[20px] bg-white p-5 shadow-sheet space-y-3">
           <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase text-slate-700">
-            <Code2 className="h-4 w-4 text-indigo-600" />
+            <Code2 className="h-4 w-4 text-ink-600" />
             {infraT.apiTitle}
           </div>
           <pre className="overflow-x-auto rounded-lg bg-slate-950 p-4 font-mono text-xs text-slate-200 leading-relaxed">

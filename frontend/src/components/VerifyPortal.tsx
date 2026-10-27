@@ -24,6 +24,7 @@ import {
   ClaimCheckResponse,
   LanguageCode,
 } from "@/lib/types";
+import { ticks } from "@/lib/ticks";
 
 interface Props {
   language: LanguageCode;
@@ -243,10 +244,10 @@ export default function VerifyPortal({
   return (
     <div className="space-y-8">
       {/* Citizen Assistant Section */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="rounded-[20px] bg-white p-6 shadow-sheet">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
-            <span className="inline-block rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 border border-indigo-200">
+            <span className="inline-block rounded-full bg-ink-50 px-2.5 py-0.5 text-xs font-semibold text-ink-700 border border-ink-200">
               {verifyT.publicServiceBadge}
             </span>
             <h2 className="mt-2 text-lg font-bold text-slate-900">
@@ -270,7 +271,7 @@ export default function VerifyPortal({
               }}
               className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
                 epicInput === d.epic
-                  ? "border-indigo-600 bg-indigo-600 text-white"
+                  ? "border-ink-600 bg-ink-600 text-white"
                   : "border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100"
               }`}
             >
@@ -305,7 +306,7 @@ export default function VerifyPortal({
             <button
               type="submit"
               disabled={loadingAssistant}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+              className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-ink-600 px-4 py-2 text-sm font-semibold text-white hover:bg-ink-700 disabled:opacity-50"
             >
               <Search className="h-4 w-4" />
               {loadingAssistant ? "..." : t.askButton}
@@ -361,7 +362,7 @@ export default function VerifyPortal({
               <button
                 type="button"
                 onClick={handleSpeakAloud}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-white px-3 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-50"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-ink-200 bg-white px-3 py-1 text-xs font-semibold text-ink-700 hover:bg-ink-50"
               >
                 <Volume2 className="h-3.5 w-3.5" /> {t.listenButton}
               </button>
@@ -376,14 +377,14 @@ export default function VerifyPortal({
             )}
 
             <p className="text-base font-medium leading-relaxed text-slate-900">
-              {assistantRes.answer_text}
+              {ticks(assistantRes.answer_text)}
             </p>
 
             {/* 4-Cycle Longitudinal Lineage Timeline */}
             {assistantRes.lookup_result &&
               assistantRes.lookup_result.version_history.length > 0 && (
                 <div>
-                  <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
+                  <div className="text-xs font-semibold text-slate-500 mb-2">
                     {fmt(verifyT.timelineTitle, {
                       epic: assistantRes.lookup_result.epic_id,
                     })}
@@ -394,7 +395,7 @@ export default function VerifyPortal({
                         key={String(vh.version_id)}
                         className="rounded-lg border border-slate-200 bg-white p-3 text-xs"
                       >
-                        <div className="font-mono font-bold text-indigo-700">
+                        <div className="font-mono font-bold text-ink-700">
                           {String(vh.version_id)}
                         </div>
                         <div className="mt-1 font-semibold text-slate-900">
@@ -417,12 +418,12 @@ export default function VerifyPortal({
             {/* Official Next Steps & Forms */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="rounded-lg border border-slate-200 bg-white p-3.5">
-                <div className="text-xs font-semibold uppercase tracking-wide text-slate-700">
+                <div className="text-xs font-semibold text-slate-700">
                   {verifyT.officialStepsTitle}
                 </div>
                 <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-slate-700">
                   {assistantRes.official_next_steps.map((st, idx) => (
-                    <li key={idx}>{st}</li>
+                    <li key={idx}>{ticks(st)}</li>
                   ))}
                 </ul>
                 {assistantRes.referenced_forms.length > 0 && (
@@ -430,7 +431,7 @@ export default function VerifyPortal({
                     {assistantRes.referenced_forms.map((f) => (
                       <span
                         key={f}
-                        className="rounded bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-800 border border-indigo-200"
+                        className="rounded bg-ink-50 px-2 py-0.5 text-xs font-semibold text-ink-800 border border-ink-200"
                       >
                         ECI {f}
                       </span>
@@ -439,12 +440,12 @@ export default function VerifyPortal({
                 )}
               </div>
               <div className="rounded-lg border border-slate-200 bg-white p-3.5">
-                <div className="text-xs font-semibold uppercase tracking-wide text-slate-700">
+                <div className="text-xs font-semibold text-slate-700">
                   {verifyT.reasoningTraceTitle}
                 </div>
                 <ol className="mt-2 list-decimal space-y-1 pl-4 text-xs text-slate-600">
                   {assistantRes.reasoning_steps.map((r, idx) => (
-                    <li key={idx}>{r}</li>
+                    <li key={idx}>{ticks(r)}</li>
                   ))}
                 </ol>
               </div>
@@ -454,7 +455,7 @@ export default function VerifyPortal({
       </div>
 
       {/* Viral Claim Checker Section */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">
+      <div className="rounded-[20px] bg-white p-6 shadow-sheet space-y-5">
         <div>
           <span className="inline-block rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-800 border border-amber-200">
             {verifyT.equalStandardsBadge}
@@ -508,11 +509,11 @@ export default function VerifyPortal({
           <div className="space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-5">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
               <div>
-                <div className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
+                <div className="text-xs font-semibold text-ink-700">
                   {verifyT.verdictHeader}
                 </div>
                 <div className="mt-0.5 text-base font-bold text-slate-900">
-                  {claimRes.overall_assessment_label}
+                  {ticks(claimRes.overall_assessment_label)}
                 </div>
               </div>
               <div className="text-right text-xs text-slate-600">
@@ -531,7 +532,7 @@ export default function VerifyPortal({
             {/* 3 Epistemic Buckets */}
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
               <div className="rounded-xl border border-emerald-200 bg-white p-4">
-                <h4 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-emerald-800">
+                <h4 className="flex items-center gap-1.5 text-xs font-bold text-emerald-800">
                   <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                   {t.verifiedCol}
                 </h4>
@@ -539,10 +540,10 @@ export default function VerifyPortal({
                   {claimRes.verified_facts.map((item, idx) => (
                     <div key={idx} className="text-xs">
                       <p className="font-medium text-slate-800">
-                        {item.statement}
+                        {ticks(item.statement)}
                       </p>
                       <span className="mt-0.5 block font-mono text-[11px] text-emerald-700">
-                        {fmt(verifyT.sourceLabel, { src: item.evidence_source })}
+                        {ticks(fmt(verifyT.sourceLabel, { src: item.evidence_source }))}
                       </span>
                     </div>
                   ))}
@@ -550,7 +551,7 @@ export default function VerifyPortal({
               </div>
 
               <div className="rounded-xl border border-amber-200 bg-white p-4">
-                <h4 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-amber-800">
+                <h4 className="flex items-center gap-1.5 text-xs font-bold text-amber-800">
                   <XCircle className="h-4 w-4 text-amber-600" />
                   {t.disputedCol}
                 </h4>
@@ -558,10 +559,10 @@ export default function VerifyPortal({
                   {claimRes.disputed_interpretations.map((item, idx) => (
                     <div key={idx} className="text-xs">
                       <p className="font-medium text-slate-800">
-                        {item.statement}
+                        {ticks(item.statement)}
                       </p>
                       <span className="mt-0.5 block font-mono text-[11px] text-amber-700">
-                        {fmt(verifyT.basisLabel, { basis: item.evidence_source })}
+                        {ticks(fmt(verifyT.basisLabel, { basis: item.evidence_source }))}
                       </span>
                     </div>
                   ))}
@@ -569,7 +570,7 @@ export default function VerifyPortal({
               </div>
 
               <div className="rounded-xl border border-sky-200 bg-white p-4">
-                <h4 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-sky-900">
+                <h4 className="flex items-center gap-1.5 text-xs font-bold text-sky-900">
                   <HelpCircle className="h-4 w-4 text-sky-600" />
                   {t.unprovableCol}
                 </h4>
@@ -577,10 +578,10 @@ export default function VerifyPortal({
                   {claimRes.unprovable_from_public_data.map((item, idx) => (
                     <div key={idx} className="text-xs">
                       <p className="font-medium text-slate-800">
-                        {item.statement}
+                        {ticks(item.statement)}
                       </p>
                       <span className="mt-0.5 block font-mono text-[11px] text-sky-700">
-                        {fmt(verifyT.missingLabel, { missing: item.evidence_source })}
+                        {ticks(fmt(verifyT.missingLabel, { missing: item.evidence_source }))}
                       </span>
                     </div>
                   ))}
@@ -590,11 +591,11 @@ export default function VerifyPortal({
 
             <div className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-white p-3 text-xs text-slate-600 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-1.5">
-                <ShieldAlert className="h-4 w-4 text-indigo-600 shrink-0" />
+                <ShieldAlert className="h-4 w-4 text-ink-600 shrink-0" />
                 <span>{claimRes.neutrality_guardrail_note}</span>
               </div>
               <span className="font-mono text-[11px] text-slate-400 shrink-0">
-                {claimRes.confidence_basis}
+                {ticks(claimRes.confidence_basis)}
               </span>
             </div>
           </div>

@@ -214,3 +214,12 @@ export interface GapAnalysisItem {
   polltoll_wedge: string;
   is_prototype_core: boolean;
 }
+
+/** Sidebar sections of the control console. */
+export type Section =
+  | "dashboard"
+  | "comparison"
+  | "flags"
+  | "review"
+  | "report"
+  | "citizen";

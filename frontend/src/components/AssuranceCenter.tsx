@@ -25,6 +25,7 @@ import {
 } from "@/lib/locales/common";
 import { ASSURANCE_LOCALE } from "@/lib/locales/assurance";
 import { AuditReceipt, GapAnalysisItem, LanguageCode } from "@/lib/types";
+import { ticks } from "@/lib/ticks";
 
 interface Props {
   language: LanguageCode;
@@ -120,10 +121,10 @@ export default function AssuranceCenter({
   return (
     <div className="space-y-8">
       {/* Cryptographic Attestation & WebCrypto Verifier */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">
+      <div className="rounded-[20px] bg-white p-6 shadow-sheet space-y-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <div className="flex items-center gap-2 text-xs font-mono font-semibold uppercase tracking-wider text-indigo-700">
+            <div className="flex items-center gap-2 text-xs font-mono font-semiboldr text-ink-700">
               <FileKey2 className="h-4 w-4" />
               {assuranceT.receiptTag}
             </div>
@@ -139,7 +140,7 @@ export default function AssuranceCenter({
             <button
               onClick={() => void handleIssueReceipt()}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-ink-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-ink-700 disabled:opacity-50"
             >
               <RefreshCw className="h-3.5 w-3.5" />
               {loading ? assuranceT.reIssuingBtn : assuranceT.reIssueBtn}
@@ -290,8 +291,8 @@ export default function AssuranceCenter({
         {/* Append-Only Correction Log Chain */}
         {activeReceipt && (
           <div>
-            <h3 className="flex items-center gap-1.5 text-xs font-mono font-bold uppercase tracking-wider text-slate-700">
-              <Link2 className="h-4 w-4 text-indigo-600" />
+            <h3 className="flex items-center gap-1.5 text-xs font-mono font-boldr text-slate-700">
+              <Link2 className="h-4 w-4 text-ink-600" />
               {fmt(assuranceT.chainTitle, { count: activeReceipt.correction_history.length })}
             </h3>
             <div className="mt-3 space-y-2">
@@ -301,7 +302,7 @@ export default function AssuranceCenter({
                   className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs flex flex-col gap-1 md:flex-row md:items-center md:justify-between"
                 >
                   <div>
-                    <span className="font-mono font-bold text-indigo-700">
+                    <span className="font-mono font-bold text-ink-700">
                       {ev.event_id}
                     </span>{" "}
                     •{" "}
@@ -312,7 +313,7 @@ export default function AssuranceCenter({
                       flagId: ev.flag_id,
                       role: ev.reviewer_role,
                     })}
-                    <p className="mt-0.5 text-slate-700">{ev.note}</p>
+                    <p className="mt-0.5 text-slate-700">{ticks(ev.note)}</p>
                   </div>
                   <div className="font-mono text-slate-500 shrink-0 text-right">
                     <div>{fmt(assuranceT.prevHash, { hash: ev.prev_hash.slice(0, 12) })}</div>
@@ -328,9 +329,9 @@ export default function AssuranceCenter({
       </div>
 
       {/* ERONET vs PollToll Feature-by-Feature Gap Analysis Matrix */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+      <div className="rounded-[20px] bg-white p-6 shadow-sheet space-y-4">
         <div>
-          <div className="flex items-center gap-2 text-xs font-mono font-semibold uppercase tracking-wider text-indigo-700">
+          <div className="flex items-center gap-2 text-xs font-mono font-semiboldr text-ink-700">
             <TableProperties className="h-4 w-4" />
             {assuranceT.gapTag}
           </div>
@@ -362,13 +363,13 @@ export default function AssuranceCenter({
                 <tr
                   key={g.id}
                   className={
-                    g.is_prototype_core ? "bg-indigo-50/25" : "bg-white"
+                    g.is_prototype_core ? "bg-ink-50/25" : "bg-white"
                   }
                 >
                   <td className="px-3 py-3 font-semibold text-slate-900">
                     {g.capability}
                     {g.is_prototype_core && (
-                      <span className="mt-1 block w-fit rounded bg-indigo-100 px-1.5 py-0.5 font-mono text-[12px] text-indigo-800">
+                      <span className="mt-1 block w-fit rounded bg-ink-100 px-1.5 py-0.5 font-mono text-[12px] text-ink-800">
                         {assuranceT.prototypeWedgeBadge}
                       </span>
                     )}
@@ -382,7 +383,7 @@ export default function AssuranceCenter({
                   <td className="px-3 py-3 text-slate-800 font-medium">
                     {g.external_audit_gap}
                   </td>
-                  <td className="px-3 py-3 text-indigo-950">
+                  <td className="px-3 py-3 text-ink-950">
                     <span className="inline-flex items-start gap-1">
                       {g.is_prototype_core ? (
                         <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" />

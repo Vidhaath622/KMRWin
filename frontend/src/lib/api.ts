@@ -76,10 +76,11 @@ export async function fetchSnapshots(
 export async function fetchAuditDiff(
   fromVersion: string,
   toVersion: string,
-  lang: LanguageCode = "en"
+  lang: LanguageCode = "en",
+  sampleLimit = 120
 ): Promise<LedgerDiffResponse> {
   return requestJson<LedgerDiffResponse>(
-    `/api/v1/audit/diff?from_version=${encodeURIComponent(fromVersion)}&to_version=${encodeURIComponent(toVersion)}&sample_limit=120&lang=${lang}`
+    `/api/v1/audit/diff?from_version=${encodeURIComponent(fromVersion)}&to_version=${encodeURIComponent(toVersion)}&sample_limit=${sampleLimit}&lang=${lang}`
   );
 }
 

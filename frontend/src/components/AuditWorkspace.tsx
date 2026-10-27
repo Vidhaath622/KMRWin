@@ -39,6 +39,7 @@ import {
   LedgerDiffResponse,
   SnapshotMeta,
 } from "@/lib/types";
+import { ticks } from "@/lib/ticks";
 
 interface Props {
   language: LanguageCode;
@@ -50,6 +51,12 @@ interface Props {
   loading: boolean;
   onInspectEpicInVerify: (epicId: string) => void;
   onRefreshDiff: () => void;
+  /** Which part of the workspace the sidebar section shows. */
+  section?: "comparison" | "flags" | "review";
+  selectedFlagId?: string | null;
+  onSelectFlag?: (id: string) => void;
+  onOpenReview?: (id: string) => void;
+  openReviewLabel?: string;
 }
 
 export default function AuditWorkspace({
@@ -62,13 +69,26 @@ export default function AuditWorkspace({
   loading,
   onInspectEpicInVerify,
   onRefreshDiff,
+  section = "flags",
+  selectedFlagId: controlledFlagId,
+  onSelectFlag,
+  onOpenReview,
+  openReviewLabel,
 }: Props) {
+  const showCompare = section === "comparison";
+  const showInspector = section === "flags";
+  const showReview = section === "review";
   const auditT = getDict(AUDIT_LOCALE, language);
   const changeLabels = getDict(CHANGE_TYPE_LABELS, language);
   const sevLabels = getDict(SEVERITY_LABELS, language);
   const revStatusLabels = getDict(REVIEW_STATUS_LABELS, language);
 
-  const [selectedFlagId, setSelectedFlagId] = useState<string | null>(null);
+  const [localFlagId, setLocalFlagId] = useState<string | null>(null);
+  const selectedFlagId = controlledFlagId !== undefined ? controlledFlagId : localFlagId;
+  const setSelectedFlagId = (id: string) => {
+    setLocalFlagId(id);
+    onSelectFlag?.(id);
+  };
   const [ledgerFilter, setLedgerFilter] = useState<"ALL" | ChangeType>("ALL");
   const [reviewerRole, setReviewerRole] = useState(
     language === "hi"
@@ -174,11 +194,12 @@ export default function AuditWorkspace({
 
   return (
     <div className="space-y-6">
-      {/* Snapshot Comparison Bar */}
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      {/* Snapshot Comparison Bar (roll pickers now live in the page header) */}
+      {showCompare && (
+      <div className="rounded-[20px] bg-white p-5 shadow-sheet">
+        <div className="hidden flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-indigo-700">
+            <div className="flex items-center gap-2 text-xs font-semiboldr text-ink-700">
               <GitCompare className="h-4 w-4" />
               {auditT.diffTitle}
             </div>
@@ -248,16 +269,17 @@ export default function AuditWorkspace({
           </div>
         )}
       </div>
+      )}
 
       {loading && !diffData ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-12 text-center text-sm text-slate-500">
+        <div className="rounded-[20px] bg-white p-12 shadow-sheet text-center text-sm text-slate-500">
           {auditT.loadingLedger}
         </div>
       ) : diffData ? (
         <>
-          {/* KPI Strip */}
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          {/* KPI Strip (shown on the Dashboard instead) */}
+          <div className="hidden">
+            <div className="rounded-[20px] bg-white p-4 shadow-sheet">
               <div className="text-xs font-medium text-slate-500">
                 {auditT.kpiRefElectors}
               </div>
@@ -268,18 +290,18 @@ export default function AuditWorkspace({
                 {fmt(auditT.kpiInTarget, { count: diffData.totals.electors_to.toLocaleString() })}
               </div>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="rounded-[20px] bg-white p-4 shadow-sheet">
               <div className="text-xs font-medium text-slate-500">
                 {auditT.kpiAdditions}
               </div>
-              <div className="mt-1 text-2xl font-bold text-indigo-700">
+              <div className="mt-1 text-2xl font-bold text-ink-700">
                 +{diffData.totals.added.toLocaleString()}
               </div>
               <div className="mt-1 text-xs text-slate-500">
                 {auditT.kpiAdditionsSub}
               </div>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="rounded-[20px] bg-white p-4 shadow-sheet">
               <div className="text-xs font-medium text-slate-500">
                 {auditT.kpiDeletions}
               </div>
@@ -301,7 +323,7 @@ export default function AuditWorkspace({
                 {auditT.kpiSplitsSub}
               </div>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="rounded-[20px] bg-white p-4 shadow-sheet">
               <div className="text-xs font-medium text-slate-500">
                 {auditT.kpiModifications}
               </div>
@@ -312,7 +334,7 @@ export default function AuditWorkspace({
                 {auditT.kpiModificationsSub}
               </div>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="rounded-[20px] bg-white p-4 shadow-sheet">
               <div className="text-xs font-medium text-slate-500">
                 {auditT.kpiRules}
               </div>
@@ -326,8 +348,9 @@ export default function AuditWorkspace({
           </div>
 
           {/* Charts Row */}
+          {showCompare && (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="rounded-[20px] bg-white p-5 shadow-sheet">
               <h3 className="text-sm font-semibold text-slate-900">
                 {auditT.chart1Title}
               </h3>
@@ -351,13 +374,13 @@ export default function AuditWorkspace({
                     <Bar
                       dataKey="netDeletionPct"
                       name={auditT.chart1Net}
-                      fill="#d97706"
+                      fill="#B3261E"
                       radius={[3, 3, 0, 0]}
                     />
                     <Bar
                       dataKey="baselinePct"
                       name={auditT.chart1Baseline}
-                      fill="#4f46e5"
+                      fill="#1A1442"
                       radius={[3, 3, 0, 0]}
                     />
                   </BarChart>
@@ -365,7 +388,7 @@ export default function AuditWorkspace({
               </div>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="rounded-[20px] bg-white p-5 shadow-sheet">
               <h3 className="text-sm font-semibold text-slate-900">
                 {auditT.chart2Title}
               </h3>
@@ -384,25 +407,25 @@ export default function AuditWorkspace({
                       dataKey="added"
                       stackId="a"
                       name={auditT.chart2Added}
-                      fill="#4f46e5"
+                      fill="#0E7A4F"
                     />
                     <Bar
                       dataKey="transferredOut"
                       stackId="a"
                       name={auditT.chart2Transferred}
-                      fill="#10b981"
+                      fill="#0B6A87"
                     />
                     <Bar
                       dataKey="modified"
                       stackId="a"
                       name={auditT.chart2Modified}
-                      fill="#0ea5e9"
+                      fill="#9A6200"
                     />
                     <Bar
                       dataKey="deleted"
                       stackId="a"
                       name={auditT.chart2Deleted}
-                      fill="#f59e0b"
+                      fill="#B3261E"
                     />
                   </BarChart>
                 </ResponsiveContainer>
@@ -410,11 +433,14 @@ export default function AuditWorkspace({
             </div>
           </div>
 
+          )}
+
           {/* Master-Detail Anomaly Flags & 5-Part Evidence Inspector */}
+          {(showInspector || showReview) && (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
             <div className="lg:col-span-5 space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-700">
+                <h3 className="text-sm font-semiboldr text-slate-700">
                   {fmt(auditT.queueTitle, { count: diffData.flags.length })}
                 </h3>
                 <span className="text-xs text-slate-500">
@@ -430,7 +456,7 @@ export default function AuditWorkspace({
                     onClick={() => setSelectedFlagId(flg.flag_id)}
                     className={`w-full text-left rounded-xl border p-4 transition-all ${
                       active
-                        ? "border-indigo-600 bg-indigo-50/40 ring-1 ring-indigo-600 shadow-sm"
+                        ? "border-ink-600 bg-ink-50/40 ring-1 ring-ink-600 shadow-sm"
                         : "border-slate-200 bg-white hover:border-slate-300"
                     }`}
                   >
@@ -441,7 +467,7 @@ export default function AuditWorkspace({
                       </span>
                     </div>
                     <div className="mt-2 text-sm font-semibold text-slate-900">
-                      {flg.headline}
+                      {ticks(flg.headline)}
                     </div>
                     <div className="mt-2 flex items-center justify-between text-xs text-slate-600">
                       <span>
@@ -450,7 +476,7 @@ export default function AuditWorkspace({
                       <span>
                         {fmt(auditT.confidence, { pct: (flg.explanation.confidence_level * 100).toFixed(0) })}
                         {" "}• {auditT.statusLabel}
-                        <span className="font-medium text-indigo-700">
+                        <span className="font-medium text-ink-700">
                           {statusText}
                         </span>
                       </span>
@@ -463,7 +489,7 @@ export default function AuditWorkspace({
             {/* 5-Part Evidence Inspector */}
             <div className="lg:col-span-7">
               {selectedFlag && (
-                <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">
+                <div className="rounded-[20px] bg-white p-6 shadow-sheet space-y-5">
                   <div className="border-b border-slate-200 pb-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       {severityBadge(selectedFlag.severity)}
@@ -472,7 +498,7 @@ export default function AuditWorkspace({
                       </span>
                     </div>
                     <h3 className="mt-2 text-lg font-bold text-slate-900">
-                      {selectedFlag.headline}
+                      {ticks(selectedFlag.headline)}
                     </h3>
                     <p className="mt-1 text-xs text-slate-500">
                       {selectedFlag.constituency_id} —{" "}
@@ -480,9 +506,10 @@ export default function AuditWorkspace({
                     </p>
                   </div>
 
+                  {showInspector && (<>
                   {/* Uncertainty Box */}
-                  <div className="rounded-lg border border-indigo-200 bg-indigo-50/50 p-4">
-                    <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-indigo-900">
+                  <div className="rounded-lg border border-ink-200 bg-ink-50/50 p-4">
+                    <div className="flex items-center justify-between text-xs font-semiboldr text-ink-900">
                       <span className="flex items-center gap-1.5">
                         <Scale className="h-4 w-4" /> {auditT.uncertaintyHeader}
                       </span>
@@ -491,7 +518,7 @@ export default function AuditWorkspace({
                       </span>
                     </div>
                     <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4 text-xs">
-                      <div className="rounded bg-white p-2 border border-indigo-100">
+                      <div className="rounded bg-white p-2 border border-ink-100">
                         <div className="text-slate-500">{auditT.observedMetric}</div>
                         <div className="font-mono text-sm font-bold text-slate-900">
                           {(
@@ -500,7 +527,7 @@ export default function AuditWorkspace({
                           %
                         </div>
                       </div>
-                      <div className="rounded bg-white p-2 border border-indigo-100">
+                      <div className="rounded bg-white p-2 border border-ink-100">
                         <div className="text-slate-500">{auditT.wilsonCI}</div>
                         <div className="font-mono text-sm font-bold text-slate-900">
                           [
@@ -514,7 +541,7 @@ export default function AuditWorkspace({
                           %]
                         </div>
                       </div>
-                      <div className="rounded bg-white p-2 border border-indigo-100">
+                      <div className="rounded bg-white p-2 border border-ink-100">
                         <div className="text-slate-500">{auditT.baselineHistorical}</div>
                         <div className="font-mono text-sm font-bold text-slate-900">
                           {(
@@ -524,16 +551,16 @@ export default function AuditWorkspace({
                           %
                         </div>
                       </div>
-                      <div className="rounded bg-white p-2 border border-indigo-100">
+                      <div className="rounded bg-white p-2 border border-ink-100">
                         <div className="text-slate-500">{auditT.zScoreDeviation}</div>
-                        <div className="font-mono text-sm font-bold text-indigo-700">
+                        <div className="font-mono text-sm font-bold text-ink-700">
                           {selectedFlag.uncertainty.z_score >= 0 ? "+" : ""}
                           {selectedFlag.uncertainty.z_score}σ
                         </div>
                       </div>
                     </div>
-                    <p className="mt-2 text-xs text-indigo-950/80">
-                      {selectedFlag.uncertainty.uncertainty_note}
+                    <p className="mt-2 text-xs text-ink-950/80">
+                      {ticks(selectedFlag.uncertainty.uncertainty_note)}
                     </p>
                   </div>
 
@@ -544,7 +571,7 @@ export default function AuditWorkspace({
                         {auditT.sec1Title}
                       </h4>
                       <p className="mt-1 text-slate-700">
-                        {selectedFlag.explanation.what_changed}
+                        {ticks(selectedFlag.explanation.what_changed)}
                       </p>
                       <div className="mt-2 flex flex-wrap items-center gap-1.5">
                         <span className="text-xs text-slate-500">
@@ -554,7 +581,7 @@ export default function AuditWorkspace({
                           <button
                             key={ep}
                             onClick={() => onInspectEpicInVerify(ep)}
-                            className="rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-indigo-700 hover:bg-indigo-100"
+                            className="rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-ink-700 hover:bg-ink-100"
                             title={auditT.inspectCitizenTooltip}
                           >
                             {ep} ↗
@@ -568,7 +595,7 @@ export default function AuditWorkspace({
                         {auditT.sec2Title}
                       </h4>
                       <p className="mt-1 text-slate-700">
-                        {selectedFlag.explanation.rule_triggered}
+                        {ticks(selectedFlag.explanation.rule_triggered)}
                       </p>
                       <code className="mt-1 block rounded bg-slate-900 px-3 py-1.5 text-xs text-emerald-300 font-mono">
                         {selectedFlag.rule_formula}
@@ -577,28 +604,28 @@ export default function AuditWorkspace({
 
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div className="rounded-lg border border-emerald-200 bg-emerald-50/40 p-3.5">
-                        <h4 className="font-semibold text-emerald-950 flex items-center gap-1.5 text-xs uppercase tracking-wide">
+                        <h4 className="font-semibold text-emerald-950 flex items-center gap-1.5 text-xs">
                           <ShieldCheck className="h-4 w-4 text-emerald-700" />
                           {auditT.sec3Title}
                         </h4>
                         <ul className="mt-2 list-disc space-y-1.5 pl-4 text-xs text-slate-700">
                           {selectedFlag.explanation.innocent_explanations.map(
                             (it, i) => (
-                              <li key={i}>{it}</li>
+                              <li key={i}>{ticks(it)}</li>
                             )
                           )}
                         </ul>
                       </div>
 
                       <div className="rounded-lg border border-sky-200 bg-sky-50/40 p-3.5">
-                        <h4 className="font-semibold text-sky-950 flex items-center gap-1.5 text-xs uppercase tracking-wide">
+                        <h4 className="font-semibold text-sky-950 flex items-center gap-1.5 text-xs">
                           <HelpCircle className="h-4 w-4 text-sky-700" />
                           {auditT.sec4Title}
                         </h4>
                         <ul className="mt-2 list-disc space-y-1.5 pl-4 text-xs text-slate-700">
                           {selectedFlag.explanation.missing_evidence.map(
                             (it, i) => (
-                              <li key={i}>{it}</li>
+                              <li key={i}>{ticks(it)}</li>
                             )
                           )}
                         </ul>
@@ -606,11 +633,11 @@ export default function AuditWorkspace({
                     </div>
 
                     <div className="rounded-lg border border-slate-200 bg-slate-50 p-3.5">
-                      <h4 className="font-semibold text-slate-900 text-xs uppercase tracking-wide">
+                      <h4 className="font-semibold text-slate-900 text-xs">
                         {auditT.sec5Title}
                       </h4>
                       <p className="mt-1 text-xs text-slate-700">
-                        {selectedFlag.explanation.next_verification_step}
+                        {ticks(selectedFlag.explanation.next_verification_step)}
                       </p>
                       <div className="mt-2 border-t border-slate-200 pt-2 text-xs text-slate-500">
                         <strong>
@@ -618,18 +645,38 @@ export default function AuditWorkspace({
                             pct: (selectedFlag.explanation.confidence_level * 100).toFixed(0),
                           })}
                         </strong>{" "}
-                        {selectedFlag.explanation.confidence_basis}
+                        {ticks(selectedFlag.explanation.confidence_basis)}
                       </div>
                     </div>
                   </div>
 
+                  {onOpenReview && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenReview(selectedFlag.flag_id)}
+                      className="inline-flex items-center gap-2 rounded-xl bg-ink-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-ink-700"
+                    >
+                      <MessageSquarePlus className="h-4 w-4" />
+                      {openReviewLabel || auditT.formTitle}
+                    </button>
+                  )}
+                  </>)}
+
+                  {showReview && (<>
+                  <div className="space-y-3 text-sm">
+                    <p className="text-slate-700">{ticks(selectedFlag.explanation.what_changed)}</p>
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3.5">
+                      <h4 className="text-xs font-semibold text-slate-900">{auditT.sec5Title}</h4>
+                      <p className="mt-1 text-xs text-slate-700">{ticks(selectedFlag.explanation.next_verification_step)}</p>
+                    </div>
+                  </div>
                   {/* Append-Only Reviewer Correction Form */}
                   <form
                     onSubmit={handleAddAnnotation}
                     className="rounded-lg border border-slate-200 bg-slate-50/70 p-4 space-y-3"
                   >
-                    <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-800">
-                      <MessageSquarePlus className="h-4 w-4 text-indigo-600" />
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800">
+                      <MessageSquarePlus className="h-4 w-4 text-ink-600" />
                       {auditT.formTitle}
                     </div>
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -683,7 +730,7 @@ export default function AuditWorkspace({
                       <button
                         type="submit"
                         disabled={savingNote || reviewNote.trim().length < 5}
-                        className="rounded-lg bg-indigo-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                        className="rounded-lg bg-ink-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-ink-700 disabled:opacity-50"
                       >
                         {savingNote ? auditT.formSubmittingBtn : auditT.formSubmitBtn}
                       </button>
@@ -694,17 +741,20 @@ export default function AuditWorkspace({
                       </div>
                     )}
                   </form>
+                  </>)}
                 </div>
               )}
             </div>
           </div>
+          )}
 
           {/* Traceable Electoral Change Ledger Sample Table */}
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          {showCompare && (
+          <div className="rounded-[20px] bg-white p-5 shadow-sheet">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-                  <Layers className="h-4 w-4 text-indigo-600" />
+                  <Layers className="h-4 w-4 text-ink-600" />
                   {auditT.tableTitle}
                 </h3>
                 <p className="text-xs text-slate-500">
@@ -758,7 +808,7 @@ export default function AuditWorkspace({
                       <td className="px-3 py-2">
                         <button
                           onClick={() => onInspectEpicInVerify(row.epic_id)}
-                          className="font-mono font-semibold text-indigo-700 hover:underline"
+                          className="font-mono font-semibold text-ink-700 hover:underline"
                         >
                           {row.epic_id}
                         </button>
@@ -775,7 +825,7 @@ export default function AuditWorkspace({
                               ? "bg-amber-100 text-amber-900"
                               : row.change_type === "MODIFIED"
                               ? "bg-sky-100 text-sky-900"
-                              : "bg-indigo-100 text-indigo-900"
+                              : "bg-ink-100 text-ink-900"
                           }`}
                         >
                           {changeLabels[row.change_type] || row.change_type}
@@ -806,6 +856,7 @@ export default function AuditWorkspace({
               </table>
             </div>
           </div>
+          )}
         </>
       ) : null}
     </div>
