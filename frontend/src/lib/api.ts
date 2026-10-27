@@ -9,8 +9,8 @@ import {
   SnapshotMeta,
 } from "./types";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
+// Default to same-origin `/api/v1/*` proxied via Next.js rewrites (immune to browser extensions, CORS, and localhost/127.0.0.1 splits)
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
