@@ -80,10 +80,6 @@ export default function PollTollControlPlane() {
     setToVersion(newSnap.version_id);
   }
 
-  if (!mounted) {
-    return <main suppressHydrationWarning className="min-h-screen bg-slate-100" />;
-  }
-
   return (
     <div suppressHydrationWarning className="min-h-screen flex flex-col">
       {/* Infrastructure Telemetry Top Bar */}
