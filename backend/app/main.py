@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import threading
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -44,13 +45,17 @@ from app.services.ai_explainer import (
 from app.services.gap_analysis import get_eronet_gap_matrix
 
 _db_conn: duckdb.DuckDBPyConnection | None = None
+_db_init_lock = threading.Lock()
 
 
 def get_db() -> duckdb.DuckDBPyConnection:
+    """Returns a thread-safe per-caller DuckDB cursor so concurrent FastAPI worker threads never collide."""
     global _db_conn
     if _db_conn is None:
-        _db_conn = ensure_synthetic_database()
-    return _db_conn
+        with _db_init_lock:
+            if _db_conn is None:
+                _db_conn = ensure_synthetic_database()
+    return _db_conn.cursor()
 
 
 @asynccontextmanager
