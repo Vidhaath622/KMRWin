@@ -1,0 +1,29 @@
+[project]
+name = "polltoll-backend"
+version = "0.1.0"
+description = "PollToll: Independent Electoral Change-Audit Infrastructure (Ledger, Baseline Engine, Explainability & Ed25519 Receipts)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "cryptography>=43.0.0",
+    "duckdb>=1.1.0",
+    "fastapi>=0.115.0",
+    "google-genai>=2.30.1",
+    "pydantic>=2.9.0",
+    "python-dotenv>=1.0.1",
+    "rapidfuzz>=3.10.0",
+    "uvicorn>=0.32.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.27.2",
+    "pytest>=8.3.3",
+]
+
+[tool.uv]
+managed = true
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+

@@ -1,0 +1,1894 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "PollToll API \u2014 Independent Electoral Change-Audit Platform",
+    "description": "Deterministic Electoral Change Ledger, Historical-Baseline Statistical Anomaly Engine, 5-Part Evidence Explanations, Multilingual Citizen Verify Assistant (EN/HI/GU), and Client-Verifiable Ed25519 Audit Receipts over 100% synthetic roll snapshots.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/ingest/snapshot": {
+      "post": {
+        "summary": "Api Ingest Snapshot",
+        "operationId": "api_ingest_snapshot_api_v1_ingest_snapshot_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngestSnapshotRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SnapshotMeta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_api_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Api V1 Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/infra/quota": {
+      "get": {
+        "summary": "Api Infra Quota",
+        "operationId": "api_infra_quota_api_v1_infra_quota_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Api Infra Quota Api V1 Infra Quota Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/snapshots": {
+      "get": {
+        "summary": "Api Snapshots",
+        "operationId": "api_snapshots_api_v1_snapshots_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SnapshotMeta"
+                  },
+                  "type": "array",
+                  "title": "Response Api Snapshots Api V1 Snapshots Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rules": {
+      "get": {
+        "summary": "Api Rules",
+        "operationId": "api_rules_api_v1_rules_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Api Rules Api V1 Rules Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/gap-analysis": {
+      "get": {
+        "summary": "Api Gap Analysis",
+        "operationId": "api_gap_analysis_api_v1_gap_analysis_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/GapAnalysisItem"
+                  },
+                  "type": "array",
+                  "title": "Response Api Gap Analysis Api V1 Gap Analysis Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/audit/diff": {
+      "get": {
+        "summary": "Api Audit Diff",
+        "operationId": "api_audit_diff_api_v1_audit_diff_get",
+        "parameters": [
+          {
+            "name": "from_version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "v2025_final",
+              "title": "From Version"
+            }
+          },
+          {
+            "name": "to_version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "v2026_draft",
+              "title": "To Version"
+            }
+          },
+          {
+            "name": "sample_limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 10,
+              "default": 100,
+              "title": "Sample Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LedgerDiffResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assurance/corrections": {
+      "get": {
+        "summary": "Api List Corrections",
+        "operationId": "api_list_corrections_api_v1_assurance_corrections_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CorrectionEvent"
+                  },
+                  "type": "array",
+                  "title": "Response Api List Corrections Api V1 Assurance Corrections Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Api Append Correction",
+        "operationId": "api_append_correction_api_v1_assurance_corrections_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppendCorrectionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorrectionEvent"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assurance/receipts/generate": {
+      "post": {
+        "summary": "Api Generate Receipt",
+        "operationId": "api_generate_receipt_api_v1_assurance_receipts_generate_post",
+        "parameters": [
+          {
+            "name": "from_version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "v2025_final",
+              "title": "From Version"
+            }
+          },
+          {
+            "name": "to_version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "v2026_draft",
+              "title": "To Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditReceipt"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assurance/receipts/verify": {
+      "post": {
+        "summary": "Api Verify Receipt",
+        "operationId": "api_verify_receipt_api_v1_assurance_receipts_verify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyReceiptRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyReceiptResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/verify/citizen/{epic_id}": {
+      "get": {
+        "summary": "Api Citizen Lookup",
+        "operationId": "api_citizen_lookup_api_v1_verify_citizen__epic_id__get",
+        "parameters": [
+          {
+            "name": "epic_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Epic Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CitizenLookupResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/verify/assistant": {
+      "post": {
+        "summary": "Api Citizen Assistant",
+        "operationId": "api_citizen_assistant_api_v1_verify_assistant_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CitizenAssistantRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CitizenAssistantResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/verify/claim-check": {
+      "post": {
+        "summary": "Api Claim Check",
+        "operationId": "api_claim_check_api_v1_verify_claim_check_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimCheckRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimCheckResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AnomalyFlag": {
+        "properties": {
+          "flag_id": {
+            "type": "string",
+            "title": "Flag Id"
+          },
+          "booth_id": {
+            "type": "string",
+            "title": "Booth Id"
+          },
+          "booth_name": {
+            "type": "string",
+            "title": "Booth Name"
+          },
+          "constituency_id": {
+            "type": "string",
+            "title": "Constituency Id"
+          },
+          "constituency_name": {
+            "type": "string",
+            "title": "Constituency Name"
+          },
+          "rule_id": {
+            "type": "string",
+            "title": "Rule Id"
+          },
+          "rule_version": {
+            "type": "string",
+            "title": "Rule Version"
+          },
+          "rule_formula": {
+            "type": "string",
+            "title": "Rule Formula"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "INFO_RECONCILED",
+              "MODERATE_REVIEW",
+              "HIGH_STATISTICAL_OUTLIER"
+            ],
+            "title": "Severity"
+          },
+          "headline": {
+            "type": "string",
+            "title": "Headline"
+          },
+          "affected_records_count": {
+            "type": "integer",
+            "title": "Affected Records Count"
+          },
+          "sample_epic_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sample Epic Ids"
+          },
+          "uncertainty": {
+            "$ref": "#/components/schemas/UncertaintyInterval"
+          },
+          "explanation": {
+            "$ref": "#/components/schemas/FivePartExplanation"
+          },
+          "review_status": {
+            "type": "string",
+            "enum": [
+              "OPEN_FOR_REVIEW",
+              "ANNOTATED_BY_REVIEWER",
+              "RECONCILED_BOUNDARY_SHIFT"
+            ],
+            "title": "Review Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "flag_id",
+          "booth_id",
+          "booth_name",
+          "constituency_id",
+          "constituency_name",
+          "rule_id",
+          "rule_version",
+          "rule_formula",
+          "severity",
+          "headline",
+          "affected_records_count",
+          "sample_epic_ids",
+          "uncertainty",
+          "explanation",
+          "review_status"
+        ],
+        "title": "AnomalyFlag"
+      },
+      "AppendCorrectionRequest": {
+        "properties": {
+          "flag_id": {
+            "type": "string",
+            "title": "Flag Id"
+          },
+          "reviewer_role": {
+            "type": "string",
+            "title": "Reviewer Role",
+            "default": "Independent Civic Auditor"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "EVIDENCE_NOTE_ADDED",
+              "MARKED_EXPLAINED_ADMIN_SHIFT",
+              "ESCALATED_FOR_FIELD_CHECK"
+            ],
+            "title": "Action"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 600,
+            "minLength": 5,
+            "title": "Note"
+          },
+          "evidence_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Reference"
+          }
+        },
+        "type": "object",
+        "required": [
+          "flag_id",
+          "action",
+          "note"
+        ],
+        "title": "AppendCorrectionRequest"
+      },
+      "AuditReceipt": {
+        "properties": {
+          "receipt_id": {
+            "type": "string",
+            "title": "Receipt Id"
+          },
+          "schema_version": {
+            "type": "string",
+            "title": "Schema Version",
+            "default": "polltoll-audit-receipt/1.0"
+          },
+          "generated_at_utc": {
+            "type": "string",
+            "title": "Generated At Utc"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload"
+          },
+          "canonical_payload": {
+            "type": "string",
+            "title": "Canonical Payload",
+            "description": "Deterministic UTF-8 JSON string signed by Ed25519 for client-side WebCrypto verification"
+          },
+          "payload_sha256": {
+            "type": "string",
+            "title": "Payload Sha256"
+          },
+          "signature_algorithm": {
+            "type": "string",
+            "title": "Signature Algorithm",
+            "default": "Ed25519"
+          },
+          "public_key_hex": {
+            "type": "string",
+            "title": "Public Key Hex"
+          },
+          "public_key_spki_b64": {
+            "type": "string",
+            "title": "Public Key Spki B64"
+          },
+          "signature_hex": {
+            "type": "string",
+            "title": "Signature Hex"
+          },
+          "correction_chain_valid": {
+            "type": "boolean",
+            "title": "Correction Chain Valid"
+          },
+          "correction_history": {
+            "items": {
+              "$ref": "#/components/schemas/CorrectionEvent"
+            },
+            "type": "array",
+            "title": "Correction History"
+          }
+        },
+        "type": "object",
+        "required": [
+          "receipt_id",
+          "generated_at_utc",
+          "payload",
+          "canonical_payload",
+          "payload_sha256",
+          "public_key_hex",
+          "public_key_spki_b64",
+          "signature_hex",
+          "correction_chain_valid",
+          "correction_history"
+        ],
+        "title": "AuditReceipt"
+      },
+      "BoothChangeSummary": {
+        "properties": {
+          "booth_id": {
+            "type": "string",
+            "title": "Booth Id"
+          },
+          "booth_name": {
+            "type": "string",
+            "title": "Booth Name"
+          },
+          "constituency_id": {
+            "type": "string",
+            "title": "Constituency Id"
+          },
+          "constituency_name": {
+            "type": "string",
+            "title": "Constituency Name"
+          },
+          "latitude": {
+            "type": "number",
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "title": "Longitude"
+          },
+          "electors_from": {
+            "type": "integer",
+            "title": "Electors From"
+          },
+          "electors_to": {
+            "type": "integer",
+            "title": "Electors To"
+          },
+          "added_count": {
+            "type": "integer",
+            "title": "Added Count"
+          },
+          "deleted_count": {
+            "type": "integer",
+            "title": "Deleted Count"
+          },
+          "modified_count": {
+            "type": "integer",
+            "title": "Modified Count"
+          },
+          "transferred_in_count": {
+            "type": "integer",
+            "title": "Transferred In Count"
+          },
+          "transferred_out_count": {
+            "type": "integer",
+            "title": "Transferred Out Count"
+          },
+          "raw_deletion_rate": {
+            "type": "number",
+            "title": "Raw Deletion Rate"
+          },
+          "net_effective_deletion_rate": {
+            "type": "number",
+            "title": "Net Effective Deletion Rate"
+          },
+          "deletion_ci_lower_95": {
+            "type": "number",
+            "title": "Deletion Ci Lower 95"
+          },
+          "deletion_ci_upper_95": {
+            "type": "number",
+            "title": "Deletion Ci Upper 95"
+          },
+          "historical_deletion_baseline": {
+            "type": "number",
+            "title": "Historical Deletion Baseline"
+          },
+          "z_score_vs_baseline": {
+            "type": "number",
+            "title": "Z Score Vs Baseline"
+          },
+          "flag_count": {
+            "type": "integer",
+            "title": "Flag Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "booth_id",
+          "booth_name",
+          "constituency_id",
+          "constituency_name",
+          "latitude",
+          "longitude",
+          "electors_from",
+          "electors_to",
+          "added_count",
+          "deleted_count",
+          "modified_count",
+          "transferred_in_count",
+          "transferred_out_count",
+          "raw_deletion_rate",
+          "net_effective_deletion_rate",
+          "deletion_ci_lower_95",
+          "deletion_ci_upper_95",
+          "historical_deletion_baseline",
+          "z_score_vs_baseline",
+          "flag_count"
+        ],
+        "title": "BoothChangeSummary"
+      },
+      "CitizenAssistantRequest": {
+        "properties": {
+          "query": {
+            "type": "string",
+            "title": "Query",
+            "default": ""
+          },
+          "epic_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Epic Id"
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "hi",
+              "gu"
+            ],
+            "title": "Language",
+            "default": "en"
+          },
+          "audio_base64": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio Base64",
+            "description": "Optional base64 audio from browser mic"
+          },
+          "audio_mime_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio Mime Type",
+            "description": "e.g. audio/webm or audio/wav"
+          },
+          "include_tts": {
+            "type": "boolean",
+            "title": "Include Tts",
+            "default": false
+          },
+          "use_llm": {
+            "type": "boolean",
+            "title": "Use Llm",
+            "description": "Set False for deterministic EPIC lookups or mount previews to save free-tier API quota.",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "CitizenAssistantRequest"
+      },
+      "CitizenAssistantResponse": {
+        "properties": {
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "hi",
+              "gu"
+            ],
+            "title": "Language"
+          },
+          "recognized_transcript": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recognized Transcript"
+          },
+          "answer_text": {
+            "type": "string",
+            "title": "Answer Text"
+          },
+          "confidence_level": {
+            "type": "number",
+            "title": "Confidence Level"
+          },
+          "reasoning_steps": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reasoning Steps"
+          },
+          "official_next_steps": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Official Next Steps"
+          },
+          "referenced_forms": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Referenced Forms"
+          },
+          "lookup_result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CitizenLookupResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tts_audio_base64": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tts Audio Base64"
+          },
+          "tts_mime_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tts Mime Type"
+          },
+          "generated_by": {
+            "type": "string",
+            "title": "Generated By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "language",
+          "answer_text",
+          "confidence_level",
+          "reasoning_steps",
+          "official_next_steps",
+          "referenced_forms",
+          "generated_by"
+        ],
+        "title": "CitizenAssistantResponse"
+      },
+      "CitizenLookupResponse": {
+        "properties": {
+          "found": {
+            "type": "boolean",
+            "title": "Found"
+          },
+          "epic_id": {
+            "type": "string",
+            "title": "Epic Id"
+          },
+          "current_status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE_UNCHANGED",
+              "ACTIVE_MODIFIED",
+              "ACTIVE_BOOTH_TRANSFERRED",
+              "DELETED_IN_DRAFT_SUPPLEMENT",
+              "NOT_FOUND"
+            ],
+            "title": "Current Status"
+          },
+          "latest_record": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Record"
+          },
+          "version_history": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Version History"
+          },
+          "plain_language_summary": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "enum": [
+                "en",
+                "hi",
+                "gu"
+              ]
+            },
+            "type": "object",
+            "title": "Plain Language Summary"
+          },
+          "official_next_steps": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "propertyNames": {
+              "enum": [
+                "en",
+                "hi",
+                "gu"
+              ]
+            },
+            "type": "object",
+            "title": "Official Next Steps"
+          },
+          "relevant_eci_forms": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Relevant Eci Forms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "found",
+          "epic_id",
+          "current_status",
+          "version_history",
+          "plain_language_summary",
+          "official_next_steps",
+          "relevant_eci_forms"
+        ],
+        "title": "CitizenLookupResponse"
+      },
+      "ClaimCheckRequest": {
+        "properties": {
+          "claim_text": {
+            "type": "string",
+            "maxLength": 800,
+            "minLength": 6,
+            "title": "Claim Text"
+          },
+          "from_version": {
+            "type": "string",
+            "title": "From Version",
+            "default": "v2025_final"
+          },
+          "to_version": {
+            "type": "string",
+            "title": "To Version",
+            "default": "v2026_draft"
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "hi",
+              "gu"
+            ],
+            "title": "Language",
+            "default": "en"
+          },
+          "use_llm": {
+            "type": "boolean",
+            "title": "Use Llm",
+            "description": "Set False on automatic UI mount previews to preserve free-tier Gemini RPM/RPD quota.",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "claim_text"
+        ],
+        "title": "ClaimCheckRequest"
+      },
+      "ClaimCheckResponse": {
+        "properties": {
+          "claim_text": {
+            "type": "string",
+            "title": "Claim Text"
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "hi",
+              "gu"
+            ],
+            "title": "Language"
+          },
+          "overall_assessment_label": {
+            "type": "string",
+            "title": "Overall Assessment Label"
+          },
+          "verified_facts": {
+            "items": {
+              "$ref": "#/components/schemas/ClaimFindingItem"
+            },
+            "type": "array",
+            "title": "Verified Facts"
+          },
+          "disputed_interpretations": {
+            "items": {
+              "$ref": "#/components/schemas/ClaimFindingItem"
+            },
+            "type": "array",
+            "title": "Disputed Interpretations"
+          },
+          "unprovable_from_public_data": {
+            "items": {
+              "$ref": "#/components/schemas/ClaimFindingItem"
+            },
+            "type": "array",
+            "title": "Unprovable From Public Data"
+          },
+          "confidence_level": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence Level"
+          },
+          "confidence_basis": {
+            "type": "string",
+            "title": "Confidence Basis"
+          },
+          "reasoning_steps": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reasoning Steps"
+          },
+          "referenced_booths": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Referenced Booths"
+          },
+          "neutrality_guardrail_note": {
+            "type": "string",
+            "title": "Neutrality Guardrail Note"
+          },
+          "generated_by": {
+            "type": "string",
+            "title": "Generated By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "claim_text",
+          "language",
+          "overall_assessment_label",
+          "verified_facts",
+          "disputed_interpretations",
+          "unprovable_from_public_data",
+          "confidence_level",
+          "confidence_basis",
+          "reasoning_steps",
+          "referenced_booths",
+          "neutrality_guardrail_note",
+          "generated_by"
+        ],
+        "title": "ClaimCheckResponse"
+      },
+      "ClaimFindingItem": {
+        "properties": {
+          "statement": {
+            "type": "string",
+            "title": "Statement"
+          },
+          "evidence_source": {
+            "type": "string",
+            "title": "Evidence Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "statement",
+          "evidence_source"
+        ],
+        "title": "ClaimFindingItem"
+      },
+      "CorrectionEvent": {
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "title": "Seq"
+          },
+          "event_id": {
+            "type": "string",
+            "title": "Event Id"
+          },
+          "flag_id": {
+            "type": "string",
+            "title": "Flag Id"
+          },
+          "reviewer_role": {
+            "type": "string",
+            "title": "Reviewer Role"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "FLAG_LOGGED",
+              "EVIDENCE_NOTE_ADDED",
+              "MARKED_EXPLAINED_ADMIN_SHIFT",
+              "ESCALATED_FOR_FIELD_CHECK"
+            ],
+            "title": "Action"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note"
+          },
+          "evidence_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Reference"
+          },
+          "timestamp_utc": {
+            "type": "string",
+            "title": "Timestamp Utc"
+          },
+          "prev_hash": {
+            "type": "string",
+            "title": "Prev Hash"
+          },
+          "event_hash": {
+            "type": "string",
+            "title": "Event Hash"
+          }
+        },
+        "type": "object",
+        "required": [
+          "seq",
+          "event_id",
+          "flag_id",
+          "reviewer_role",
+          "action",
+          "note",
+          "timestamp_utc",
+          "prev_hash",
+          "event_hash"
+        ],
+        "title": "CorrectionEvent"
+      },
+      "FivePartExplanation": {
+        "properties": {
+          "what_changed": {
+            "type": "string",
+            "title": "What Changed",
+            "description": "Exact empirical change recorded in the Electoral Change Ledger"
+          },
+          "rule_triggered": {
+            "type": "string",
+            "title": "Rule Triggered",
+            "description": "Exact deterministic rule ID, version, and threshold"
+          },
+          "innocent_explanations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Innocent Explanations",
+            "description": "Plausible administrative, demographic, or clerical causes"
+          },
+          "missing_evidence": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing Evidence",
+            "description": "Documents/records not present in published rolls needed to verify"
+          },
+          "next_verification_step": {
+            "type": "string",
+            "title": "Next Verification Step",
+            "description": "Concrete non-partisan verification step for an authorized reviewer"
+          },
+          "confidence_level": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence Level",
+            "description": "Calibrated statistical confidence in the pattern"
+          },
+          "confidence_basis": {
+            "type": "string",
+            "title": "Confidence Basis"
+          },
+          "reasoning_steps": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reasoning Steps"
+          },
+          "neutrality_passed": {
+            "type": "boolean",
+            "title": "Neutrality Passed",
+            "default": true
+          },
+          "generated_by": {
+            "type": "string",
+            "enum": [
+              "gemini-3.8-flash+deterministic-ledger",
+              "deterministic-ledger-engine"
+            ],
+            "title": "Generated By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "what_changed",
+          "rule_triggered",
+          "innocent_explanations",
+          "missing_evidence",
+          "next_verification_step",
+          "confidence_level",
+          "confidence_basis",
+          "reasoning_steps",
+          "generated_by"
+        ],
+        "title": "FivePartExplanation"
+      },
+      "GapAnalysisItem": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "capability": {
+            "type": "string",
+            "title": "Capability"
+          },
+          "eronet_documented_status": {
+            "type": "string",
+            "title": "Eronet Documented Status"
+          },
+          "internal_epistemic_limit": {
+            "type": "string",
+            "title": "Internal Epistemic Limit"
+          },
+          "external_audit_gap": {
+            "type": "string",
+            "title": "External Audit Gap"
+          },
+          "polltoll_wedge": {
+            "type": "string",
+            "title": "Polltoll Wedge"
+          },
+          "is_prototype_core": {
+            "type": "boolean",
+            "title": "Is Prototype Core"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "capability",
+          "eronet_documented_status",
+          "internal_epistemic_limit",
+          "external_audit_gap",
+          "polltoll_wedge",
+          "is_prototype_core"
+        ],
+        "title": "GapAnalysisItem"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "IngestSnapshotRequest": {
+        "properties": {
+          "version_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_\\-]{3,36}$",
+            "title": "Version Id",
+            "description": "Unique snapshot identifier, e.g. v2026_final_patch1"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 4,
+            "title": "Label"
+          },
+          "publication_date": {
+            "type": "string",
+            "title": "Publication Date"
+          },
+          "roll_type": {
+            "type": "string",
+            "title": "Roll Type",
+            "default": "SUPPLEMENT_CONSOLIDATED"
+          },
+          "base_version_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Version Id",
+            "description": "Optional existing snapshot to apply CSV delta rows onto (or null for standalone full CSV)",
+            "default": "v2026_draft"
+          },
+          "csv_payload": {
+            "type": "string",
+            "minLength": 15,
+            "title": "Csv Payload",
+            "description": "CSV with columns: action(ADD|DELETE|MODIFY),epic_id,booth_id,elector_name,relation_name,gender,age,house_no,reason_code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version_id",
+          "label",
+          "csv_payload"
+        ],
+        "title": "IngestSnapshotRequest"
+      },
+      "LedgerDiffResponse": {
+        "properties": {
+          "from_snapshot": {
+            "$ref": "#/components/schemas/SnapshotMeta"
+          },
+          "to_snapshot": {
+            "$ref": "#/components/schemas/SnapshotMeta"
+          },
+          "historical_baselines_used": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Historical Baselines Used"
+          },
+          "totals": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Totals"
+          },
+          "booth_summaries": {
+            "items": {
+              "$ref": "#/components/schemas/BoothChangeSummary"
+            },
+            "type": "array",
+            "title": "Booth Summaries"
+          },
+          "flags": {
+            "items": {
+              "$ref": "#/components/schemas/AnomalyFlag"
+            },
+            "type": "array",
+            "title": "Flags"
+          },
+          "sample_ledger_entries": {
+            "items": {
+              "$ref": "#/components/schemas/LedgerEntry"
+            },
+            "type": "array",
+            "title": "Sample Ledger Entries"
+          },
+          "neutrality_disclaimer": {
+            "type": "string",
+            "title": "Neutrality Disclaimer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "from_snapshot",
+          "to_snapshot",
+          "historical_baselines_used",
+          "totals",
+          "booth_summaries",
+          "flags",
+          "sample_ledger_entries",
+          "neutrality_disclaimer"
+        ],
+        "title": "LedgerDiffResponse"
+      },
+      "LedgerEntry": {
+        "properties": {
+          "ledger_id": {
+            "type": "string",
+            "title": "Ledger Id"
+          },
+          "epic_id": {
+            "type": "string",
+            "title": "Epic Id"
+          },
+          "elector_name": {
+            "type": "string",
+            "title": "Elector Name"
+          },
+          "change_type": {
+            "type": "string",
+            "enum": [
+              "ADDED",
+              "DELETED",
+              "MODIFIED",
+              "BOOTH_TRANSFERRED"
+            ],
+            "title": "Change Type"
+          },
+          "constituency_id": {
+            "type": "string",
+            "title": "Constituency Id"
+          },
+          "constituency_name": {
+            "type": "string",
+            "title": "Constituency Name"
+          },
+          "from_booth_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Booth Id"
+          },
+          "to_booth_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Booth Id"
+          },
+          "from_serial_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Serial No"
+          },
+          "to_serial_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Serial No"
+          },
+          "house_no": {
+            "type": "string",
+            "title": "House No"
+          },
+          "age_before": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age Before"
+          },
+          "age_after": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age After"
+          },
+          "reason_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason Code"
+          },
+          "modified_fields": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Modified Fields"
+          },
+          "from_snapshot_sha256": {
+            "type": "string",
+            "title": "From Snapshot Sha256"
+          },
+          "to_snapshot_sha256": {
+            "type": "string",
+            "title": "To Snapshot Sha256"
+          },
+          "supplement_ref": {
+            "type": "string",
+            "title": "Supplement Ref"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ledger_id",
+          "epic_id",
+          "elector_name",
+          "change_type",
+          "constituency_id",
+          "constituency_name",
+          "house_no",
+          "from_snapshot_sha256",
+          "to_snapshot_sha256",
+          "supplement_ref"
+        ],
+        "title": "LedgerEntry"
+      },
+      "SnapshotMeta": {
+        "properties": {
+          "version_id": {
+            "type": "string",
+            "title": "Version Id",
+            "description": "Snapshot identifier, e.g. v2025_final"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "description": "Human-readable publication cycle label"
+          },
+          "publication_date": {
+            "type": "string",
+            "title": "Publication Date"
+          },
+          "roll_type": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "FINAL",
+              "SUPPLEMENT_CONSOLIDATED"
+            ],
+            "title": "Roll Type"
+          },
+          "sha256": {
+            "type": "string",
+            "title": "Sha256",
+            "description": "Deterministic SHA-256 content hash of canonical CSV/Parquet"
+          },
+          "total_electors": {
+            "type": "integer",
+            "title": "Total Electors"
+          },
+          "booth_count": {
+            "type": "integer",
+            "title": "Booth Count"
+          },
+          "synthetic_notice": {
+            "type": "string",
+            "title": "Synthetic Notice",
+            "default": "100% SYNTHETIC TEST DATASET \u2014 NO REAL VOTER DATA"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version_id",
+          "label",
+          "publication_date",
+          "roll_type",
+          "sha256",
+          "total_electors",
+          "booth_count"
+        ],
+        "title": "SnapshotMeta"
+      },
+      "UncertaintyInterval": {
+        "properties": {
+          "point_estimate": {
+            "type": "number",
+            "title": "Point Estimate",
+            "description": "Observed rate or metric (e.g. 0.096 for 9.6%)"
+          },
+          "ci_lower_95": {
+            "type": "number",
+            "title": "Ci Lower 95",
+            "description": "95% Wilson / Poisson lower bound"
+          },
+          "ci_upper_95": {
+            "type": "number",
+            "title": "Ci Upper 95",
+            "description": "95% Wilson / Poisson upper bound"
+          },
+          "historical_baseline_mean": {
+            "type": "number",
+            "title": "Historical Baseline Mean",
+            "description": "Multi-cycle baseline rate"
+          },
+          "historical_baseline_ci_upper": {
+            "type": "number",
+            "title": "Historical Baseline Ci Upper"
+          },
+          "z_score": {
+            "type": "number",
+            "title": "Z Score",
+            "description": "Standardized deviation vs baseline"
+          },
+          "sample_size": {
+            "type": "integer",
+            "title": "Sample Size",
+            "description": "Denominator count in booth/cohort"
+          },
+          "uncertainty_note": {
+            "type": "string",
+            "title": "Uncertainty Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "point_estimate",
+          "ci_lower_95",
+          "ci_upper_95",
+          "historical_baseline_mean",
+          "historical_baseline_ci_upper",
+          "z_score",
+          "sample_size",
+          "uncertainty_note"
+        ],
+        "title": "UncertaintyInterval"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "VerifyReceiptRequest": {
+        "properties": {
+          "canonical_payload": {
+            "type": "string",
+            "title": "Canonical Payload"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload"
+          },
+          "payload_sha256": {
+            "type": "string",
+            "title": "Payload Sha256"
+          },
+          "public_key_hex": {
+            "type": "string",
+            "title": "Public Key Hex"
+          },
+          "signature_hex": {
+            "type": "string",
+            "title": "Signature Hex"
+          },
+          "correction_history": {
+            "items": {
+              "$ref": "#/components/schemas/CorrectionEvent"
+            },
+            "type": "array",
+            "title": "Correction History"
+          }
+        },
+        "type": "object",
+        "required": [
+          "canonical_payload",
+          "payload",
+          "payload_sha256",
+          "public_key_hex",
+          "signature_hex"
+        ],
+        "title": "VerifyReceiptRequest"
+      },
+      "VerifyReceiptResponse": {
+        "properties": {
+          "valid": {
+            "type": "boolean",
+            "title": "Valid"
+          },
+          "checks": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "type": "object",
+            "title": "Checks"
+          },
+          "failure_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Failure Reasons"
+          }
+        },
+        "type": "object",
+        "required": [
+          "valid",
+          "checks",
+          "failure_reasons"
+        ],
+        "title": "VerifyReceiptResponse"
+      }
+    }
+  }
+}

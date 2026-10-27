@@ -1,0 +1,25 @@
+# Dependencies & virtualenvs
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Next.js build output
+frontend/.next/
+frontend/out/
+frontend/next-env.d.ts
+
+# Environment variables & secrets (NEVER commit keys)
+.env
+.env.*
+!.env.example
+backend/.env
+frontend/.env.local
+
+# Local runtime state & peer bus read-cursors
+.DS_Store
+.peer_bus_state.json
+backend/data/*.duckdb
+backend/data/*.duckdb.wal
+backend/data/keys/
