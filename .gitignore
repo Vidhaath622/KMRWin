@@ -9,6 +9,7 @@ __pycache__/
 frontend/.next/
 frontend/out/
 frontend/next-env.d.ts
+*.tsbuildinfo
 
 # Environment variables & secrets (NEVER commit keys)
 .env
