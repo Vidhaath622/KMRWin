@@ -98,6 +98,8 @@ export default function VerifyPortal({
       if (res.tts_audio_base64) {
         playBase64Audio(res.tts_audio_base64, res.tts_mime_type || "audio/wav");
       }
+    } catch {
+      // Prevent unhandled promise rejection overlay on transient reload
     } finally {
       setLoadingAssistant(false);
     }
@@ -115,6 +117,8 @@ export default function VerifyPortal({
         use_llm: useLlm,
       });
       setClaimRes(res);
+    } catch {
+      // Prevent unhandled promise rejection overlay on transient reload
     } finally {
       setLoadingClaim(false);
     }

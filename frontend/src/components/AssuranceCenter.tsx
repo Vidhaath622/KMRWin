@@ -56,6 +56,8 @@ export default function AssuranceCenter({ fromVersion, toVersion }: Props) {
       setActiveReceipt(rcpt);
       const vRes = await verifyReceiptInBrowser(rcpt);
       setVerification(vRes);
+    } catch {
+      // Handled gracefully without crashing Next.js overlay
     } finally {
       setLoading(false);
     }
