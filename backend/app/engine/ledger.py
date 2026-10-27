@@ -9,6 +9,16 @@ from typing import Any
 import duckdb
 
 from app.data.generator import list_snapshots
+from app.i18n import (
+    LanguageCode,
+    normalize_lang,
+    pick,
+    tr_booth,
+    tr_constituency,
+    tr_person,
+    tr_section,
+    tr_snapshot_label,
+)
 from app.models import (
     BoothChangeSummary,
     CitizenLookupResponse,
@@ -29,8 +39,8 @@ def wilson_ci_95(successes: int, total: int) -> tuple[float, float]:
     return (round(max(0.0, center - half), 5), round(min(1.0, center + half), 5))
 
 
-def get_snapshot_meta(con: duckdb.DuckDBPyConnection, version_id: str) -> SnapshotMeta:
-    snaps = {s.version_id: s for s in list_snapshots(con)}
+def get_snapshot_meta(con: duckdb.DuckDBPyConnection, version_id: str, lang: str = "en") -> SnapshotMeta:
+    snaps = {s.version_id: s for s in list_snapshots(con, lang=lang)}
     if version_id not in snaps:
         raise ValueError(f"Unknown snapshot version_id: {version_id}")
     return snaps[version_id]
@@ -88,6 +98,7 @@ def compute_change_ledger(
     from_version: str = "v2025_final",
     to_version: str = "v2026_draft",
     sample_limit: int = 120,
+    lang: str = "en",
 ) -> tuple[
     SnapshotMeta,
     SnapshotMeta,
@@ -96,8 +107,9 @@ def compute_change_ledger(
     list[LedgerEntry],
 ]:
     """Computes full row-level Electoral Change Ledger & booth-level statistical summaries."""
-    s_from = get_snapshot_meta(con, from_version)
-    s_to = get_snapshot_meta(con, to_version)
+    lang_code = normalize_lang(lang)
+    s_from = get_snapshot_meta(con, from_version, lang=lang_code)
+    s_to = get_snapshot_meta(con, to_version, lang=lang_code)
     baselines = compute_historical_deletion_baselines(con)
 
     # Full SQL classification across snapshots:
@@ -215,7 +227,10 @@ def compute_change_ledger(
                 if house_before != house_after:
                     mod_fields["house_no"] = {"before": house_before, "after": house_after}
                 if name_before != name_after:
-                    mod_fields["elector_name"] = {"before": name_before, "after": name_after}
+                    mod_fields["elector_name"] = {
+                        "before": tr_person(name_before, lang_code),
+                        "after": tr_person(name_after, lang_code),
+                    }
                 if age_before != age_after:
                     mod_fields["age"] = {"before": age_before, "after": age_after}
             elif ctype == "BOOTH_TRANSFERRED":
@@ -229,10 +244,10 @@ def compute_change_ledger(
                 LedgerEntry(
                     ledger_id=f"LDG-{lid.upper()}",
                     epic_id=epic_id,
-                    elector_name=elector_name,
+                    elector_name=tr_person(elector_name, lang_code),
                     change_type=ctype,
                     constituency_id=cid,
-                    constituency_name=cname,
+                    constituency_name=tr_constituency(cname, lang_code),
                     from_booth_id=from_bid,
                     to_booth_id=to_bid,
                     from_serial_no=from_sno,
@@ -290,9 +305,9 @@ def compute_change_ledger(
         booth_summaries.append(
             BoothChangeSummary(
                 booth_id=bid,
-                booth_name=bname,
+                booth_name=tr_booth(bname, lang_code),
                 constituency_id=cid,
-                constituency_name=cname,
+                constituency_name=tr_constituency(cname, lang_code),
                 latitude=lat,
                 longitude=lon,
                 electors_from=n_from,
@@ -325,8 +340,9 @@ def _zero_bstat() -> dict[str, int]:
     }
 
 
-def lookup_citizen_epic(con: duckdb.DuckDBPyConnection, query_epic: str) -> CitizenLookupResponse:
+def lookup_citizen_epic(con: duckdb.DuckDBPyConnection, query_epic: str, lang: str = "en") -> CitizenLookupResponse:
     """Traces a synthetic EPIC ID across all 4 published roll snapshots."""
+    lang_code = normalize_lang(lang)
     clean_epic = query_epic.strip().upper()
     rows = con.execute(
         """
@@ -392,19 +408,19 @@ def lookup_citizen_epic(con: duckdb.DuckDBPyConnection, query_epic: str) -> Citi
         {
             "version_id": r[0],
             "publication_date": r[1],
-            "snapshot_label": r[2],
+            "snapshot_label": tr_snapshot_label(r[2], lang_code),
             "epic_id": r[3],
-            "elector_name": r[4],
-            "relation_name": r[5],
+            "elector_name": tr_person(r[4], lang_code),
+            "relation_name": tr_person(r[5], lang_code),
             "gender": r[6],
             "age": r[7],
             "constituency_id": r[8],
-            "constituency_name": r[9],
+            "constituency_name": tr_constituency(r[9], lang_code),
             "booth_id": r[10],
-            "booth_name": r[11],
+            "booth_name": tr_booth(r[11], lang_code),
             "serial_no": r[12],
             "house_no": r[13],
-            "section_name": r[14],
+            "section_name": tr_section(r[14], lang_code),
             "reason_code": r[15],
             "supplement_ref": r[16],
         }

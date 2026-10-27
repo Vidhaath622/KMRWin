@@ -14,6 +14,12 @@ import {
 import { checkViralClaim, queryCitizenAssistant } from "@/lib/api";
 import { PRESET_CLAIMS, UI_STRINGS } from "@/lib/i18n";
 import {
+  CITIZEN_STATUS_LABELS,
+  fmt,
+  getDict,
+} from "@/lib/locales/common";
+import { VERIFY_LOCALE } from "@/lib/locales/verify";
+import {
   CitizenAssistantResponse,
   ClaimCheckResponse,
   LanguageCode,
@@ -26,13 +32,6 @@ interface Props {
   preselectedEpic: string | null;
 }
 
-const DEMO_EPICS: { epic: string; tag: string }[] = [
-  { epic: "SYN-GJ-109-0042", tag: "Booth Split (PS-109 → PS-110)" },
-  { epic: "SYN-GJ-104-0019", tag: "Draft Hostel Deletion" },
-  { epic: "SYN-GJ-207-0011", tag: "Age Typo (39 → 195)" },
-  { epic: "SYN-GJ-201-0008", tag: "Active & Unchanged" },
-];
-
 export default function VerifyPortal({
   language,
   fromVersion,
@@ -40,6 +39,9 @@ export default function VerifyPortal({
   preselectedEpic,
 }: Props) {
   const t = UI_STRINGS[language];
+  const verifyT = getDict(VERIFY_LOCALE, language);
+  const citizenStatusLabels = getDict(CITIZEN_STATUS_LABELS, language);
+
   const [epicInput, setEpicInput] = useState(
     preselectedEpic || "SYN-GJ-109-0042"
   );
@@ -56,6 +58,25 @@ export default function VerifyPortal({
   );
   const [claimRes, setClaimRes] = useState<ClaimCheckResponse | null>(null);
   const [loadingClaim, setLoadingClaim] = useState(false);
+
+  const demoEpics = [
+    {
+      epic: "SYN-GJ-109-0042",
+      tag: verifyT.epicDemoTags["SYN-GJ-109-0042"] || "Booth Split",
+    },
+    {
+      epic: "SYN-GJ-104-0019",
+      tag: verifyT.epicDemoTags["SYN-GJ-104-0019"] || "Draft Hostel Deletion",
+    },
+    {
+      epic: "SYN-GJ-207-0011",
+      tag: verifyT.epicDemoTags["SYN-GJ-207-0011"] || "Age Typo",
+    },
+    {
+      epic: "SYN-GJ-201-0008",
+      tag: verifyT.epicDemoTags["SYN-GJ-201-0008"] || "Active & Unchanged",
+    },
+  ];
 
   useEffect(() => {
     setClaimInput(PRESET_CLAIMS[language][0].claim);
@@ -204,7 +225,7 @@ export default function VerifyPortal({
           const b64 = dataUrl.includes(",") ? dataUrl.split(",")[1] : "";
           void runAssistantLookup(
             epicInput,
-            questionInput || "Voice status check",
+            questionInput || verifyT.voiceCheckDefaultQuery,
             b64,
             blob.type || "audio/webm"
           );
@@ -215,9 +236,7 @@ export default function VerifyPortal({
       mr.start();
       setRecording(true);
     } catch {
-      alert(
-        "Microphone permission unavailable in this browser context; please type your query or use the quick EPIC chips."
-      );
+      alert(verifyT.micPermissionAlert);
     }
   }
 
@@ -228,7 +247,7 @@ export default function VerifyPortal({
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
             <span className="inline-block rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 border border-indigo-200">
-              Free Public Service • English / हिन्दी / ગુજરાતી
+              {verifyT.publicServiceBadge}
             </span>
             <h2 className="mt-2 text-lg font-bold text-slate-900">
               {t.citizenTitle}
@@ -240,9 +259,9 @@ export default function VerifyPortal({
         {/* Quick synthetic EPIC demo pills */}
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <span className="text-xs font-medium text-slate-500">
-            Test Synthetic EPICs:
+            {verifyT.testEpicsLabel}
           </span>
-          {DEMO_EPICS.map((d) => (
+          {demoEpics.map((d) => (
             <button
               key={d.epic}
               onClick={() => {
@@ -328,15 +347,15 @@ export default function VerifyPortal({
                         : "bg-amber-100 text-amber-900 border border-amber-300"
                     }`}
                   >
-                    {assistantRes.lookup_result.current_status.replaceAll(
-                      "_",
-                      " "
-                    )}
+                    {citizenStatusLabels[assistantRes.lookup_result.current_status] ||
+                      assistantRes.lookup_result.current_status.replaceAll("_", " ")}
                   </span>
                 )}
                 <span className="text-xs text-slate-500">
-                  Confidence: {(assistantRes.confidence_level * 100).toFixed(0)}
-                  % • Engine: {assistantRes.generated_by}
+                  {fmt(verifyT.confidencePrefix, {
+                    pct: (assistantRes.confidence_level * 100).toFixed(0),
+                  })}{" "}
+                  • {fmt(verifyT.enginePrefix, { engine: assistantRes.generated_by })}
                 </span>
               </div>
               <button
@@ -350,7 +369,9 @@ export default function VerifyPortal({
 
             {assistantRes.recognized_transcript && (
               <div className="text-xs italic text-slate-600">
-                Voice transcript: &ldquo;{assistantRes.recognized_transcript}&rdquo;
+                {fmt(verifyT.voiceTranscriptPrefix, {
+                  transcript: assistantRes.recognized_transcript,
+                })}
               </div>
             )}
 
@@ -363,8 +384,9 @@ export default function VerifyPortal({
               assistantRes.lookup_result.version_history.length > 0 && (
                 <div>
                   <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
-                    4-Snapshot Longitudinal Roll History (
-                    {assistantRes.lookup_result.epic_id})
+                    {fmt(verifyT.timelineTitle, {
+                      epic: assistantRes.lookup_result.epic_id,
+                    })}
                   </div>
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
                     {assistantRes.lookup_result.version_history.map((vh) => (
@@ -376,13 +398,15 @@ export default function VerifyPortal({
                           {String(vh.version_id)}
                         </div>
                         <div className="mt-1 font-semibold text-slate-900">
-                          {String(vh.booth_id)} • Serial #{String(vh.serial_no)}
+                          {String(vh.booth_id)} •{" "}
+                          {fmt(verifyT.serialPrefix, { sno: String(vh.serial_no) })}
                         </div>
                         <div className="text-slate-600 truncate">
                           {String(vh.booth_name)}
                         </div>
                         <div className="mt-1 text-slate-500 font-mono">
-                          Age: {String(vh.age)} • House: {String(vh.house_no)}
+                          {fmt(verifyT.agePrefix, { age: String(vh.age) })} •{" "}
+                          {fmt(verifyT.housePrefix, { house: String(vh.house_no) })}
                         </div>
                       </div>
                     ))}
@@ -394,7 +418,7 @@ export default function VerifyPortal({
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="rounded-lg border border-slate-200 bg-white p-3.5">
                 <div className="text-xs font-semibold uppercase tracking-wide text-slate-700">
-                  Official ECI Next Steps
+                  {verifyT.officialStepsTitle}
                 </div>
                 <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-slate-700">
                   {assistantRes.official_next_steps.map((st, idx) => (
@@ -416,7 +440,7 @@ export default function VerifyPortal({
               </div>
               <div className="rounded-lg border border-slate-200 bg-white p-3.5">
                 <div className="text-xs font-semibold uppercase tracking-wide text-slate-700">
-                  Transparent Reasoning Trace
+                  {verifyT.reasoningTraceTitle}
                 </div>
                 <ol className="mt-2 list-decimal space-y-1 pl-4 text-xs text-slate-600">
                   {assistantRes.reasoning_steps.map((r, idx) => (
@@ -433,7 +457,7 @@ export default function VerifyPortal({
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">
         <div>
           <span className="inline-block rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-800 border border-amber-200">
-            Equal Standards Across All Sides • Zero Accusations
+            {verifyT.equalStandardsBadge}
           </span>
           <h2 className="mt-2 text-lg font-bold text-slate-900">
             {t.claimTitle}
@@ -469,14 +493,14 @@ export default function VerifyPortal({
             value={claimInput}
             onChange={(e) => setClaimInput(e.target.value)}
             className="flex-1 rounded-lg border border-slate-300 px-3.5 py-2 text-sm"
-            placeholder="Paste a viral social media allegation about voter additions, deletions, or booth changes..."
+            placeholder={verifyT.claimPlaceholder}
           />
           <button
             type="submit"
             disabled={loadingClaim}
             className="rounded-lg bg-slate-900 px-5 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
           >
-            {loadingClaim ? "Checking Ledger..." : t.checkClaimBtn}
+            {loadingClaim ? verifyT.checkingClaimBtn : t.checkClaimBtn}
           </button>
         </form>
 
@@ -485,7 +509,7 @@ export default function VerifyPortal({
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
               <div>
                 <div className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
-                  Ledger Assessment Verdict
+                  {verifyT.verdictHeader}
                 </div>
                 <div className="mt-0.5 text-base font-bold text-slate-900">
                   {claimRes.overall_assessment_label}
@@ -493,13 +517,13 @@ export default function VerifyPortal({
               </div>
               <div className="text-right text-xs text-slate-600">
                 <div>
-                  Confidence:{" "}
+                  {verifyT.confidenceLabel}{" "}
                   <strong>
                     {(claimRes.confidence_level * 100).toFixed(0)}%
                   </strong>
                 </div>
                 <div className="font-mono">
-                  Booths: {claimRes.referenced_booths.join(", ")}
+                  {verifyT.boothsLabel} {claimRes.referenced_booths.join(", ")}
                 </div>
               </div>
             </div>
@@ -518,7 +542,7 @@ export default function VerifyPortal({
                         {item.statement}
                       </p>
                       <span className="mt-0.5 block font-mono text-[11px] text-emerald-700">
-                        Source: {item.evidence_source}
+                        {fmt(verifyT.sourceLabel, { src: item.evidence_source })}
                       </span>
                     </div>
                   ))}
@@ -537,7 +561,7 @@ export default function VerifyPortal({
                         {item.statement}
                       </p>
                       <span className="mt-0.5 block font-mono text-[11px] text-amber-700">
-                        Basis: {item.evidence_source}
+                        {fmt(verifyT.basisLabel, { basis: item.evidence_source })}
                       </span>
                     </div>
                   ))}
@@ -556,7 +580,7 @@ export default function VerifyPortal({
                         {item.statement}
                       </p>
                       <span className="mt-0.5 block font-mono text-[11px] text-sky-700">
-                        Missing: {item.evidence_source}
+                        {fmt(verifyT.missingLabel, { missing: item.evidence_source })}
                       </span>
                     </div>
                   ))}

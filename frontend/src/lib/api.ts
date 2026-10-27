@@ -67,16 +67,19 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   }
 }
 
-export async function fetchSnapshots(): Promise<SnapshotMeta[]> {
-  return requestJson<SnapshotMeta[]>("/api/v1/snapshots");
+export async function fetchSnapshots(
+  lang: LanguageCode = "en"
+): Promise<SnapshotMeta[]> {
+  return requestJson<SnapshotMeta[]>(`/api/v1/snapshots?lang=${lang}`);
 }
 
 export async function fetchAuditDiff(
   fromVersion: string,
-  toVersion: string
+  toVersion: string,
+  lang: LanguageCode = "en"
 ): Promise<LedgerDiffResponse> {
   return requestJson<LedgerDiffResponse>(
-    `/api/v1/audit/diff?from_version=${encodeURIComponent(fromVersion)}&to_version=${encodeURIComponent(toVersion)}&sample_limit=120`
+    `/api/v1/audit/diff?from_version=${encodeURIComponent(fromVersion)}&to_version=${encodeURIComponent(toVersion)}&sample_limit=120&lang=${lang}`
   );
 }
 
@@ -158,8 +161,10 @@ export async function fetchQuotaStats(): Promise<{
   return requestJson("/api/v1/infra/quota");
 }
 
-export async function fetchGapAnalysis(): Promise<GapAnalysisItem[]> {
-  return requestJson<GapAnalysisItem[]>("/api/v1/gap-analysis");
+export async function fetchGapAnalysis(
+  lang: LanguageCode = "en"
+): Promise<GapAnalysisItem[]> {
+  return requestJson<GapAnalysisItem[]>(`/api/v1/gap-analysis?lang=${lang}`);
 }
 
 export async function ingestSnapshot(payload: {

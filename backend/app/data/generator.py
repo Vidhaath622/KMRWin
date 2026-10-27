@@ -720,7 +720,9 @@ def ensure_synthetic_database() -> duckdb.DuckDBPyConnection:
     return con
 
 
-def list_snapshots(con: duckdb.DuckDBPyConnection) -> list[SnapshotMeta]:
+def list_snapshots(con: duckdb.DuckDBPyConnection, lang: str = "en") -> list[SnapshotMeta]:
+    from app.i18n import normalize_lang, pick, tr_snapshot_label
+    lang_code = normalize_lang(lang)
     rows = con.execute(
         """
         SELECT version_id, label, publication_date, roll_type, sha256, total_electors, booth_count
@@ -728,15 +730,22 @@ def list_snapshots(con: duckdb.DuckDBPyConnection) -> list[SnapshotMeta]:
         ORDER BY publication_date ASC
         """
     ).fetchall()
+    notice = pick(
+        lang_code,
+        "100% SYNTHETIC TEST DATASET — NO REAL VOTER DATA",
+        "100% सिंथेटिक परीक्षण डेटासेट — कोई वास्तविक मतदाता डेटा नहीं",
+        "100% સિન્થેટિક ટેસ્ટ ડેટાસેટ — કોઈ વાસ્તવિક મતદાર ડેટા નથી",
+    )
     return [
         SnapshotMeta(
             version_id=r[0],
-            label=r[1],
+            label=tr_snapshot_label(r[1], lang_code),
             publication_date=r[2],
             roll_type=r[3],
             sha256=r[4],
             total_electors=r[5],
             booth_count=r[6],
+            synthetic_notice=notice,
         )
         for r in rows
     ]

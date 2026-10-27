@@ -11,9 +11,12 @@ import {
   UploadCloud,
 } from "lucide-react";
 import { fetchQuotaStats, ingestSnapshot } from "@/lib/api";
-import { SnapshotMeta } from "@/lib/types";
+import { fmt, getDict } from "@/lib/locales/common";
+import { INFRA_LOCALE } from "@/lib/locales/infra";
+import { LanguageCode, SnapshotMeta } from "@/lib/types";
 
 interface Props {
+  language: LanguageCode;
   snapshots: SnapshotMeta[];
   onSnapshotIngested: (newSnap: SnapshotMeta) => void;
 }
@@ -25,13 +28,14 @@ MODIFY,SYN-GJ-207-0011,PS-207,Kavita R. Shah,Karsanbhai Shah,F,40,H-71,M_FORM8_A
 DELETE,SYN-GJ-305-8800,PS-305,Maheshbhai K. Patel,Karsanbhai Patel,M,38,H-18,D_DUP_RESOLVED`;
 
 export default function InfraConsole({
+  language,
   snapshots,
   onSnapshotIngested,
 }: Props) {
+  const infraT = getDict(INFRA_LOCALE, language);
+
   const [versionId, setVersionId] = useState("v2026_final_rc1");
-  const [label, setLabel] = useState(
-    "2026 SSR Final Release Candidate (Post-Claims Patch)"
-  );
+  const [label, setLabel] = useState(infraT.defaultPubLabel);
   const [baseVersion, setBaseVersion] = useState("v2026_draft");
   const [csvPayload, setCsvPayload] = useState(DEFAULT_CSV);
   const [ingesting, setIngesting] = useState(false);
@@ -40,6 +44,10 @@ export default function InfraConsole({
   const [quota, setQuota] = useState<Awaited<
     ReturnType<typeof fetchQuotaStats>
   > | null>(null);
+
+  useEffect(() => {
+    setLabel(infraT.defaultPubLabel);
+  }, [infraT.defaultPubLabel]);
 
   useEffect(() => {
     void fetchQuotaStats()
@@ -75,8 +83,7 @@ export default function InfraConsole({
         <div className="rounded-xl border border-indigo-200 bg-indigo-50/40 p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase text-indigo-800">
-              <Gauge className="h-4 w-4" /> Multi-Cloud Free-Tier Quota Shield
-              (Gemini + Groq LPU + DuckDB Cache)
+              <Gauge className="h-4 w-4" /> {infraT.quotaShieldTitle}
             </div>
             <span className="rounded bg-slate-900 px-2.5 py-0.5 font-mono text-xs text-emerald-300">
               Cascade: {quota.model_cascade.join(" → ")}
@@ -85,7 +92,7 @@ export default function InfraConsole({
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4 text-xs">
             <div className="rounded-lg border border-indigo-100 bg-white p-3">
               <div className="text-slate-500">
-                Key Pool (Gemini / Groq Ready)
+                {infraT.keyPoolLabel}
               </div>
               <div className="mt-0.5 font-mono text-base font-bold text-slate-900">
                 {quota.gemini_keys_ready ?? quota.keys_ready}/
@@ -94,20 +101,20 @@ export default function InfraConsole({
               </div>
             </div>
             <div className="rounded-lg border border-indigo-100 bg-white p-3">
-              <div className="text-slate-500">DuckDB Cache Hits Saved</div>
+              <div className="text-slate-500">{infraT.cacheHitsLabel}</div>
               <div className="mt-0.5 font-mono text-base font-bold text-emerald-700">
                 {quota.metrics.cache_hits_saved} ({quota.cached_entries_in_duckdb}{" "}
                 stored)
               </div>
             </div>
             <div className="rounded-lg border border-indigo-100 bg-white p-3">
-              <div className="text-slate-500">Deterministic Fast-Path Saves</div>
+              <div className="text-slate-500">{infraT.fastpathLabel}</div>
               <div className="mt-0.5 font-mono text-base font-bold text-indigo-700">
                 {quota.metrics.deterministic_fastpath_saved}
               </div>
             </div>
             <div className="rounded-lg border border-indigo-100 bg-white p-3">
-              <div className="text-slate-500">Live Calls (Gemini / Groq)</div>
+              <div className="text-slate-500">{infraT.liveCallsLabel}</div>
               <div className="mt-0.5 font-mono text-base font-bold text-slate-900">
                 {quota.metrics.live_gemini_calls} /{" "}
                 {quota.metrics.live_groq_calls ?? 0}
@@ -120,48 +127,37 @@ export default function InfraConsole({
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase text-indigo-700">
-            <DatabaseZap className="h-4 w-4" /> Content-Addressed Store
+            <DatabaseZap className="h-4 w-4" /> {infraT.card1Tag}
           </div>
           <div className="mt-2 text-sm font-semibold text-slate-900">
-            Immutable DuckDB Snapshot Registry
+            {infraT.card1Title}
           </div>
           <p className="mt-1 text-xs text-slate-600">
-            Every ingested roll publication is canonically sorted by{" "}
-            <code className="font-mono">(booth_id, serial_no, epic_id)</code>{" "}
-            and hashed with <code className="font-mono">SHA-256</code> before
-            indexing.
+            {infraT.card1Desc}
           </p>
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase text-indigo-700">
-            <Terminal className="h-4 w-4" /> Air-Gapped / CI Auditor CLI
+            <Terminal className="h-4 w-4" /> {infraT.card2Tag}
           </div>
           <div className="mt-2 text-sm font-semibold text-slate-900">
-            Headless Reproducible Execution
+            {infraT.card2Title}
           </div>
           <p className="mt-1 text-xs text-slate-600">
-            Election observers and university labs run{" "}
-            <code className="font-mono">polltoll_cli.py</code> locally to
-            reproduce diffs and verify{" "}
-            <code className="font-mono">.polltoll-receipt.json</code> bundles
-            without trusting our hosted cloud.
+            {infraT.card2Desc}
           </p>
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase text-indigo-700">
-            <Server className="h-4 w-4" /> OpenAPI v3.1 Contract-First
+            <Server className="h-4 w-4" /> {infraT.card3Tag}
           </div>
           <div className="mt-2 text-sm font-semibold text-slate-900">
-            REST API &amp; Embeddable Civic Endpoints
+            {infraT.card3Title}
           </div>
           <p className="mt-1 text-xs text-slate-600">
-            Newsrooms and civic bots integrate{" "}
-            <code className="font-mono">/api/v1/audit/diff</code>,{" "}
-            <code className="font-mono">/api/v1/verify/claim-check</code>, and{" "}
-            <code className="font-mono">/api/v1/assurance/receipts</code>{" "}
-            directly into external workflows.
+            {infraT.card3Desc}
           </p>
         </div>
       </div>
@@ -171,19 +167,13 @@ export default function InfraConsole({
         <div>
           <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-indigo-700">
             <UploadCloud className="h-4 w-4" />
-            Live Ingestion Pipeline — POST /api/v1/ingest/snapshot
+            {infraT.pipelineTag}
           </div>
           <h2 className="mt-1 text-lg font-bold text-slate-900">
-            Ingest &amp; Content-Hash a New Synthetic Roll Snapshot
+            {infraT.pipelineTitle}
           </h2>
           <p className="text-sm text-slate-600">
-            Simulate publishing a post-objection supplement (for example,
-            fixing the age typo on{" "}
-            <code className="font-mono">SYN-GJ-207-0011</code> and resolving a
-            duplicate). PollToll computes the canonical{" "}
-            <code className="font-mono">SHA-256</code> and immediately makes the
-            snapshot available in{" "}
-            <strong className="text-slate-900">PollToll Audit</strong>.
+            {infraT.pipelineSubtitle}
           </p>
         </div>
 
@@ -191,7 +181,7 @@ export default function InfraConsole({
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             <div>
               <label className="block text-xs font-semibold text-slate-700">
-                New Snapshot ID (Immutable)
+                {infraT.idLabel}
               </label>
               <input
                 type="text"
@@ -202,7 +192,7 @@ export default function InfraConsole({
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700">
-                Base Snapshot to Patch
+                {infraT.baseLabel}
               </label>
               <select
                 value={baseVersion}
@@ -211,14 +201,14 @@ export default function InfraConsole({
               >
                 {snapshots.map((s) => (
                   <option key={s.version_id} value={s.version_id}>
-                    {s.version_id} ({s.total_electors.toLocaleString()} rows)
+                    {s.label || s.version_id} ({s.total_electors.toLocaleString()} {infraT.rowsSuffix})
                   </option>
                 ))}
               </select>
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700">
-                Publication Label
+                {infraT.pubLabel}
               </label>
               <input
                 type="text"
@@ -231,7 +221,7 @@ export default function InfraConsole({
 
           <div>
             <label className="block text-xs font-semibold text-slate-700">
-              Canonical Supplement CSV Payload (Strictly <code className="font-mono">SYN-*</code> Synthetic IDs Enforced)
+              {infraT.csvLabel}
             </label>
             <textarea
               rows={5}
@@ -243,9 +233,7 @@ export default function InfraConsole({
 
           <div className="flex items-center justify-between">
             <span className="text-xs text-slate-500">
-              Guardrail: Non-synthetic EPICs (not prefixed with{" "}
-              <code className="font-mono">SYN-</code>) are rejected at ingestion
-              time.
+              {infraT.guardrailText}
             </span>
             <button
               type="submit"
@@ -253,8 +241,8 @@ export default function InfraConsole({
               className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
             >
               {ingesting
-                ? "Hashing & Indexing..."
-                : "Ingest Snapshot & Compute SHA-256"}
+                ? infraT.ingestingBtn
+                : infraT.ingestBtn}
             </button>
           </div>
         </form>
@@ -263,16 +251,16 @@ export default function InfraConsole({
           <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-xs space-y-1">
             <div className="flex items-center gap-1.5 font-bold text-emerald-950">
               <CheckCircle2 className="h-4 w-4 text-emerald-700" />
-              Snapshot `{ingestedMeta.version_id}` Registered &amp; Switched to
-              Active Audit Target!
+              {fmt(infraT.successTitle, { id: ingestedMeta.version_id })}
             </div>
             <div className="font-mono text-emerald-900">
-              Canonical SHA-256: {ingestedMeta.sha256}
+              {fmt(infraT.successSha, { sha: ingestedMeta.sha256 })}
             </div>
             <div className="text-emerald-800">
-              Total Electors: {ingestedMeta.total_electors.toLocaleString()} across{" "}
-              {ingestedMeta.booth_count} booths. Open the{" "}
-              <strong>PollToll Audit</strong> tab to inspect the updated diff!
+              {fmt(infraT.successDetails, {
+                total: ingestedMeta.total_electors.toLocaleString(),
+                booths: ingestedMeta.booth_count,
+              })}
             </div>
           </div>
         )}
@@ -289,7 +277,7 @@ export default function InfraConsole({
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
           <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase text-slate-700">
             <Terminal className="h-4 w-4 text-indigo-600" />
-            Headless Auditor CLI (`backend/polltoll_cli.py`)
+            {infraT.cliTitle}
           </div>
           <pre className="overflow-x-auto rounded-lg bg-slate-950 p-4 font-mono text-xs text-slate-200 leading-relaxed">
 {`# 1. List content-addressed snapshots & SHA-256 digests
@@ -309,7 +297,7 @@ uv run python polltoll_cli.py verify-receipt audit.receipt.json`}
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
           <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase text-slate-700">
             <Code2 className="h-4 w-4 text-indigo-600" />
-            Programmatic REST API (`shared/openapi.json`)
+            {infraT.apiTitle}
           </div>
           <pre className="overflow-x-auto rounded-lg bg-slate-950 p-4 font-mono text-xs text-slate-200 leading-relaxed">
 {`# Query Electoral Change Ledger + Versioned Rules

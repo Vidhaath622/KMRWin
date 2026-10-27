@@ -18,14 +18,28 @@ import {
   BrowserVerificationResult,
   verifyReceiptInBrowser,
 } from "@/lib/cryptoVerify";
-import { AuditReceipt, GapAnalysisItem } from "@/lib/types";
+import {
+  CORRECTION_ACTION_LABELS,
+  fmt,
+  getDict,
+} from "@/lib/locales/common";
+import { ASSURANCE_LOCALE } from "@/lib/locales/assurance";
+import { AuditReceipt, GapAnalysisItem, LanguageCode } from "@/lib/types";
 
 interface Props {
+  language: LanguageCode;
   fromVersion: string;
   toVersion: string;
 }
 
-export default function AssuranceCenter({ fromVersion, toVersion }: Props) {
+export default function AssuranceCenter({
+  language,
+  fromVersion,
+  toVersion,
+}: Props) {
+  const assuranceT = getDict(ASSURANCE_LOCALE, language);
+  const actionLabels = getDict(CORRECTION_ACTION_LABELS, language);
+
   const [originalReceipt, setOriginalReceipt] = useState<AuditReceipt | null>(
     null
   );
@@ -37,10 +51,10 @@ export default function AssuranceCenter({ fromVersion, toVersion }: Props) {
   const [gapItems, setGapItems] = useState<GapAnalysisItem[]>([]);
 
   useEffect(() => {
-    void fetchGapAnalysis()
+    void fetchGapAnalysis(language)
       .then(setGapItems)
       .catch(() => {});
-  }, []);
+  }, [language]);
 
   useEffect(() => {
     void handleIssueReceipt();
@@ -111,19 +125,13 @@ export default function AssuranceCenter({ fromVersion, toVersion }: Props) {
           <div>
             <div className="flex items-center gap-2 text-xs font-mono font-semibold uppercase tracking-wider text-indigo-700">
               <FileKey2 className="h-4 w-4" />
-              Zero-Trust Cryptographic Audit Receipts (Ed25519 + SHA-256)
+              {assuranceT.receiptTag}
             </div>
             <h2 className="mt-1 text-lg font-bold text-slate-900">
-              Client-Side Browser Verification &amp; Append-Only Correction
-              History
+              {assuranceT.receiptTitle}
             </h2>
             <p className="text-sm text-slate-600">
-              Outside reviewers verify dataset hashes, rule-pack versions, and
-              reviewer annotations directly via the browser&apos;s{" "}
-              <code className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded">
-                window.crypto.subtle.verify(&quot;Ed25519&quot;, ...)
-              </code>{" "}
-              without trusting PollToll&apos;s server.
+              {assuranceT.receiptSubtitle}
             </p>
           </div>
 
@@ -134,7 +142,7 @@ export default function AssuranceCenter({ fromVersion, toVersion }: Props) {
               className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
             >
               <RefreshCw className="h-3.5 w-3.5" />
-              {loading ? "Signing..." : "Re-Issue Signed Receipt"}
+              {loading ? assuranceT.reIssuingBtn : assuranceT.reIssueBtn}
             </button>
             <button
               onClick={() => void handleToggleTamper()}
@@ -147,8 +155,8 @@ export default function AssuranceCenter({ fromVersion, toVersion }: Props) {
             >
               <ShieldAlert className="h-3.5 w-3.5" />
               {tampered
-                ? "Restore Authentic Receipt"
-                : "Simulate 1-Byte Tamper Attack"}
+                ? assuranceT.restoreBtn
+                : assuranceT.tamperBtn}
             </button>
             <button
               onClick={handleDownloadReceipt}
@@ -156,14 +164,14 @@ export default function AssuranceCenter({ fromVersion, toVersion }: Props) {
               className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50"
             >
               <Download className="h-3.5 w-3.5" />
-              Download .receipt.json
+              {assuranceT.downloadBtn}
             </button>
             <button
               onClick={() => window.print()}
               className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50"
             >
               <Printer className="h-3.5 w-3.5" />
-              Print Audit Report
+              {assuranceT.printBtn}
             </button>
           </div>
         </div>
@@ -191,36 +199,38 @@ export default function AssuranceCenter({ fromVersion, toVersion }: Props) {
                     }`}
                   >
                     {verification.valid
-                      ? `CRYPTOGRAPHICALLY VERIFIED IN BROWSER (${verification.engine})`
-                      : "TAMPER DETECTED — RECEIPT SIGNATURE & DIGEST REJECTED BY BROWSER"}
+                      ? fmt(assuranceT.verifiedBanner, { engine: verification.engine })
+                      : assuranceT.tamperBanner}
                   </div>
                   <div className="font-mono text-xs text-slate-600">
-                    Receipt ID: {activeReceipt.receipt_id} • Issued:{" "}
-                    {activeReceipt.generated_at_utc}
+                    {fmt(assuranceT.receiptMeta, {
+                      id: activeReceipt.receipt_id,
+                      date: activeReceipt.generated_at_utc,
+                    })}
                   </div>
                 </div>
               </div>
               <span className="rounded bg-slate-900 px-2.5 py-1 font-mono text-xs text-emerald-300">
-                Alg: {activeReceipt.signature_algorithm}
+                {fmt(assuranceT.algPrefix, { alg: activeReceipt.signature_algorithm })}
               </span>
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4 text-xs">
               {[
                 {
-                  label: "1. Canonical JSON Match",
+                  label: assuranceT.chk1Canonical,
                   ok: verification.checks.payloadMatchesCanonicalJson,
                 },
                 {
-                  label: "2. WebCrypto SHA-256 Digest",
+                  label: assuranceT.chk2Sha256,
                   ok: verification.checks.sha256DigestMatches,
                 },
                 {
-                  label: "3. SubtleCrypto Ed25519 Sig",
+                  label: assuranceT.chk3Ed25519,
                   ok: verification.checks.ed25519SignatureValid,
                 },
                 {
-                  label: "4. Hash-Chained Review Log",
+                  label: assuranceT.chk4HashChain,
                   ok: verification.checks.correctionChainLinksIntact,
                 },
               ].map((chk) => (
@@ -234,7 +244,7 @@ export default function AssuranceCenter({ fromVersion, toVersion }: Props) {
                       chk.ok ? "text-emerald-700" : "text-rose-700"
                     }`}
                   >
-                    {chk.ok ? "PASS" : "FAIL"}
+                    {chk.ok ? assuranceT.passText : assuranceT.failText}
                   </span>
                 </div>
               ))}
@@ -251,7 +261,7 @@ export default function AssuranceCenter({ fromVersion, toVersion }: Props) {
             <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-3 text-xs font-mono">
               <div className="rounded-lg bg-white p-3 border border-slate-200 truncate">
                 <span className="text-slate-500 block">
-                  Ed25519 Public Key (Hex):
+                  {assuranceT.pubKeyLabel}
                 </span>
                 <span className="text-slate-900">
                   {activeReceipt.public_key_hex}
@@ -259,7 +269,7 @@ export default function AssuranceCenter({ fromVersion, toVersion }: Props) {
               </div>
               <div className="rounded-lg bg-white p-3 border border-slate-200 truncate">
                 <span className="text-slate-500 block">
-                  Signed Payload SHA-256:
+                  {assuranceT.payloadDigestLabel}
                 </span>
                 <span className="text-slate-900">
                   {activeReceipt.payload_sha256}
@@ -267,7 +277,7 @@ export default function AssuranceCenter({ fromVersion, toVersion }: Props) {
               </div>
               <div className="rounded-lg bg-white p-3 border border-slate-200 truncate">
                 <span className="text-slate-500 block">
-                  Ed25519 Signature (64-Byte Hex):
+                  {assuranceT.sigLabel}
                 </span>
                 <span className="text-slate-900">
                   {activeReceipt.signature_hex}
@@ -282,8 +292,7 @@ export default function AssuranceCenter({ fromVersion, toVersion }: Props) {
           <div>
             <h3 className="flex items-center gap-1.5 text-xs font-mono font-bold uppercase tracking-wider text-slate-700">
               <Link2 className="h-4 w-4 text-indigo-600" />
-              Immutable Hash-Chained Correction &amp; Review History (
-              {activeReceipt.correction_history.length} Events)
+              {fmt(assuranceT.chainTitle, { count: activeReceipt.correction_history.length })}
             </h3>
             <div className="mt-3 space-y-2">
               {activeReceipt.correction_history.map((ev) => (
@@ -297,18 +306,18 @@ export default function AssuranceCenter({ fromVersion, toVersion }: Props) {
                     </span>{" "}
                     •{" "}
                     <span className="font-semibold text-slate-900">
-                      {ev.action}
+                      {actionLabels[ev.action] || ev.action}
                     </span>{" "}
-                    on <span className="font-mono">{ev.flag_id}</span> by{" "}
-                    <span className="italic text-slate-700">
-                      {ev.reviewer_role}
-                    </span>
+                    {fmt(assuranceT.onFlagBy, {
+                      flagId: ev.flag_id,
+                      role: ev.reviewer_role,
+                    })}
                     <p className="mt-0.5 text-slate-700">{ev.note}</p>
                   </div>
                   <div className="font-mono text-slate-500 shrink-0 text-right">
-                    <div>prev: {ev.prev_hash.slice(0, 12)}...</div>
+                    <div>{fmt(assuranceT.prevHash, { hash: ev.prev_hash.slice(0, 12) })}</div>
                     <div className="text-slate-800 font-semibold">
-                      hash: {ev.event_hash.slice(0, 12)}...
+                      {fmt(assuranceT.eventHash, { hash: ev.event_hash.slice(0, 12) })}
                     </div>
                   </div>
                 </div>
@@ -323,16 +332,13 @@ export default function AssuranceCenter({ fromVersion, toVersion }: Props) {
         <div>
           <div className="flex items-center gap-2 text-xs font-mono font-semibold uppercase tracking-wider text-indigo-700">
             <TableProperties className="h-4 w-4" />
-            Epistemic Validation — Feature-by-Feature ERONET Gap Matrix
+            {assuranceT.gapTag}
           </div>
           <h3 className="mt-1 text-lg font-bold text-slate-900">
-            Why PollToll Complements Rather Than Rebuilds ECI&apos;s ERONET
+            {assuranceT.gapTitle}
           </h3>
           <p className="text-sm text-slate-600">
-            Public ECI documentation confirms ERONET&apos;s national
-            registration and internal DSE/PSE deduplication capabilities, while
-            cannot-disprove boundaries are disclosed transparently. PollToll
-            targets external change-auditing over published snapshots.
+            {assuranceT.gapSubtitle}
           </p>
         </div>
 
@@ -340,15 +346,15 @@ export default function AssuranceCenter({ fromVersion, toVersion }: Props) {
           <table className="min-w-full divide-y divide-slate-200 text-left text-xs">
             <thead className="bg-slate-50 font-semibold text-slate-700">
               <tr>
-                <th className="px-3 py-2.5">Capability</th>
+                <th className="px-3 py-2.5">{assuranceT.colCapability}</th>
                 <th className="px-3 py-2.5">
-                  Publicly Documented in ERONET / ECI?
+                  {assuranceT.colEronetStatus}
                 </th>
                 <th className="px-3 py-2.5">
-                  Epistemic Boundary (Internal Unknowns)
+                  {assuranceT.colEpistemicLimit}
                 </th>
-                <th className="px-3 py-2.5">External / Third-Party Audit Gap</th>
-                <th className="px-3 py-2.5">PollToll Infrastructure Wedge</th>
+                <th className="px-3 py-2.5">{assuranceT.colAuditGap}</th>
+                <th className="px-3 py-2.5">{assuranceT.colPolltollWedge}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -363,7 +369,7 @@ export default function AssuranceCenter({ fromVersion, toVersion }: Props) {
                     {g.capability}
                     {g.is_prototype_core && (
                       <span className="mt-1 block w-fit rounded bg-indigo-100 px-1.5 py-0.5 font-mono text-[12px] text-indigo-800">
-                        Active Prototype Wedge
+                        {assuranceT.prototypeWedgeBadge}
                       </span>
                     )}
                   </td>

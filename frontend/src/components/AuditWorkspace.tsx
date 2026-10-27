@@ -25,13 +25,23 @@ import {
 } from "recharts";
 import { appendReviewerCorrection } from "@/lib/api";
 import {
+  CHANGE_TYPE_LABELS,
+  fmt,
+  getDict,
+  REVIEW_STATUS_LABELS,
+  SEVERITY_LABELS,
+} from "@/lib/locales/common";
+import { AUDIT_LOCALE } from "@/lib/locales/audit";
+import {
   AnomalyFlag,
   ChangeType,
+  LanguageCode,
   LedgerDiffResponse,
   SnapshotMeta,
 } from "@/lib/types";
 
 interface Props {
+  language: LanguageCode;
   snapshots: SnapshotMeta[];
   fromVersion: string;
   toVersion: string;
@@ -43,6 +53,7 @@ interface Props {
 }
 
 export default function AuditWorkspace({
+  language,
   snapshots,
   fromVersion,
   toVersion,
@@ -52,10 +63,19 @@ export default function AuditWorkspace({
   onInspectEpicInVerify,
   onRefreshDiff,
 }: Props) {
+  const auditT = getDict(AUDIT_LOCALE, language);
+  const changeLabels = getDict(CHANGE_TYPE_LABELS, language);
+  const sevLabels = getDict(SEVERITY_LABELS, language);
+  const revStatusLabels = getDict(REVIEW_STATUS_LABELS, language);
+
   const [selectedFlagId, setSelectedFlagId] = useState<string | null>(null);
   const [ledgerFilter, setLedgerFilter] = useState<"ALL" | ChangeType>("ALL");
   const [reviewerRole, setReviewerRole] = useState(
-    "Independent Civic Observer"
+    language === "hi"
+      ? "स्वतंत्र नागरिक पर्यवेक्षक"
+      : language === "gu"
+      ? "સ્વતંત્ર નાગરિક નિરીક્ષક"
+      : "Independent Civic Observer"
   );
   const [reviewAction, setReviewAction] = useState<
     | "EVIDENCE_NOTE_ADDED"
@@ -114,37 +134,40 @@ export default function AuditWorkspace({
       setReviewNote("");
       setReviewRef("");
       setNoteSavedBanner(
-        `Appended immutable event ${ev.event_id} (SHA-256: ${ev.event_hash.slice(
-          0,
-          14
-        )}...)`
+        fmt(auditT.formSuccessAppended, {
+          id: ev.event_id,
+          hash: ev.event_hash.slice(0, 14),
+        })
       );
       onRefreshDiff();
     } catch (err) {
-      setNoteSavedBanner(`Failed to log note: ${String(err)}`);
+      setNoteSavedBanner(
+        fmt(auditT.formErrorFailed, { error: String(err) })
+      );
     } finally {
       setSavingNote(false);
     }
   }
 
   const severityBadge = (sev: AnomalyFlag["severity"]) => {
+    const text = sevLabels[sev] || sev;
     if (sev === "HIGH_STATISTICAL_OUTLIER") {
       return (
         <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-900 border border-amber-300">
-          <AlertTriangle className="h-3 w-3" /> High Statistical Outlier
+          <AlertTriangle className="h-3 w-3" /> {text}
         </span>
       );
     }
     if (sev === "MODERATE_REVIEW") {
       return (
         <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-semibold text-sky-900 border border-sky-300">
-          <FileSearch className="h-3 w-3" /> Moderate — Field Check
+          <FileSearch className="h-3 w-3" /> {text}
         </span>
       );
     }
     return (
       <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-900 border border-emerald-300">
-        <CheckCircle2 className="h-3 w-3" /> Reconciled Booth Split
+        <CheckCircle2 className="h-3 w-3" /> {text}
       </span>
     );
   };
@@ -157,18 +180,16 @@ export default function AuditWorkspace({
           <div>
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-indigo-700">
               <GitCompare className="h-4 w-4" />
-              Electoral Change Ledger — Deterministic Snapshot Diff
+              {auditT.diffTitle}
             </div>
             <p className="mt-1 text-sm text-slate-600">
-              Compares published roll versions row-by-row, reconciles cross-booth
-              transfers, and tests net rates against 2024–2025 historical
-              baselines.
+              {auditT.diffSubtitle}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-500">
-                Reference Roll (From)
+                {auditT.refRollLabel}
               </label>
               <select
                 value={fromVersion}
@@ -181,7 +202,7 @@ export default function AuditWorkspace({
                     value={s.version_id}
                     disabled={s.version_id === toVersion}
                   >
-                    {s.version_id} ({s.publication_date})
+                    {s.label || s.version_id} ({s.publication_date})
                   </option>
                 ))}
               </select>
@@ -189,7 +210,7 @@ export default function AuditWorkspace({
             <ArrowRightLeft className="mt-4 h-4 w-4 text-slate-400" />
             <div>
               <label className="block text-xs font-medium text-slate-500">
-                Target Roll (To)
+                {auditT.targetRollLabel}
               </label>
               <select
                 value={toVersion}
@@ -202,7 +223,7 @@ export default function AuditWorkspace({
                     value={s.version_id}
                     disabled={s.version_id === fromVersion}
                   >
-                    {s.version_id} ({s.publication_date})
+                    {s.label || s.version_id} ({s.publication_date})
                   </option>
                 ))}
               </select>
@@ -214,13 +235,13 @@ export default function AuditWorkspace({
           <div className="mt-4 grid grid-cols-1 gap-2 rounded-lg bg-slate-50 p-3 text-xs font-mono text-slate-600 md:grid-cols-2 border border-slate-200/80">
             <div className="truncate">
               <span className="font-semibold text-slate-800">
-                {diffData.from_snapshot.version_id} SHA-256:
+                {diffData.from_snapshot.label || diffData.from_snapshot.version_id} SHA-256:
               </span>{" "}
               {diffData.from_snapshot.sha256}
             </div>
             <div className="truncate">
               <span className="font-semibold text-slate-800">
-                {diffData.to_snapshot.version_id} SHA-256:
+                {diffData.to_snapshot.label || diffData.to_snapshot.version_id} SHA-256:
               </span>{" "}
               {diffData.to_snapshot.sha256}
             </div>
@@ -230,8 +251,7 @@ export default function AuditWorkspace({
 
       {loading && !diffData ? (
         <div className="rounded-xl border border-slate-200 bg-white p-12 text-center text-sm text-slate-500">
-          Computing deterministic DuckDB Electoral Change Ledger & 95% Wilson
-          uncertainty bounds...
+          {auditT.loadingLedger}
         </div>
       ) : diffData ? (
         <>
@@ -239,68 +259,68 @@ export default function AuditWorkspace({
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="text-xs font-medium text-slate-500">
-                Reference Electors
+                {auditT.kpiRefElectors}
               </div>
               <div className="mt-1 text-2xl font-bold text-slate-900">
                 {diffData.totals.electors_from.toLocaleString()}
               </div>
               <div className="mt-1 text-xs text-slate-500">
-                → {diffData.totals.electors_to.toLocaleString()} in target
+                {fmt(auditT.kpiInTarget, { count: diffData.totals.electors_to.toLocaleString() })}
               </div>
             </div>
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="text-xs font-medium text-slate-500">
-                Additions (+)
+                {auditT.kpiAdditions}
               </div>
               <div className="mt-1 text-2xl font-bold text-indigo-700">
                 +{diffData.totals.added.toLocaleString()}
               </div>
               <div className="mt-1 text-xs text-slate-500">
-                Form-6 & supplement inclusions
+                {auditT.kpiAdditionsSub}
               </div>
             </div>
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="text-xs font-medium text-slate-500">
-                True Net Deletions (-)
+                {auditT.kpiDeletions}
               </div>
               <div className="mt-1 text-2xl font-bold text-amber-700">
                 -{diffData.totals.deleted.toLocaleString()}
               </div>
               <div className="mt-1 text-xs text-slate-500">
-                Absent across entire roll
+                {auditT.kpiDeletionsSub}
               </div>
             </div>
             <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-sm">
               <div className="text-xs font-semibold text-emerald-800">
-                Reconciled Booth Splits
+                {auditT.kpiSplits}
               </div>
               <div className="mt-1 text-2xl font-bold text-emerald-700">
                 {diffData.totals.booth_transferred.toLocaleString()}
               </div>
               <div className="mt-1 text-xs text-emerald-800/80">
-                Active EPICs moved PS-109 → PS-110
+                {auditT.kpiSplitsSub}
               </div>
             </div>
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="text-xs font-medium text-slate-500">
-                Field Modifications (Δ)
+                {auditT.kpiModifications}
               </div>
               <div className="mt-1 text-2xl font-bold text-slate-800">
                 {diffData.totals.modified.toLocaleString()}
               </div>
               <div className="mt-1 text-xs text-slate-500">
-                Address, spelling, or age edits
+                {auditT.kpiModificationsSub}
               </div>
             </div>
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="text-xs font-medium text-slate-500">
-                Triggered Audit Rules
+                {auditT.kpiRules}
               </div>
               <div className="mt-1 text-2xl font-bold text-slate-900">
                 {diffData.flags.length}
               </div>
               <div className="mt-1 text-xs text-slate-500">
-                With 95% CIs & missing-evidence list
+                {auditT.kpiRulesSub}
               </div>
             </div>
           </div>
@@ -309,13 +329,10 @@ export default function AuditWorkspace({
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
               <h3 className="text-sm font-semibold text-slate-900">
-                Raw Booth Outflow vs. Reconciled Net Deletion Rate & Historical
-                Baseline (%)
+                {auditT.chart1Title}
               </h3>
               <p className="mt-0.5 text-xs text-slate-500">
-                Notice PS-109: 36.2% raw drop collapses to 0.21% net deletion
-                once 338 transfers to PS-110 are reconciled—whereas PS-104 &
-                PS-302 exceed historical baselines even at 95% confidence bounds.
+                {auditT.chart1Sub}
               </p>
               <div className="mt-4 h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -327,19 +344,19 @@ export default function AuditWorkspace({
                     <Legend wrapperStyle={{ fontSize: 12 }} />
                     <Bar
                       dataKey="rawDropPct"
-                      name="Raw Outflow %"
+                      name={auditT.chart1Raw}
                       fill="#cbd5e1"
                       radius={[3, 3, 0, 0]}
                     />
                     <Bar
                       dataKey="netDeletionPct"
-                      name="True Net Deletion %"
+                      name={auditT.chart1Net}
                       fill="#d97706"
                       radius={[3, 3, 0, 0]}
                     />
                     <Bar
                       dataKey="baselinePct"
-                      name="2024–25 Historical Baseline %"
+                      name={auditT.chart1Baseline}
                       fill="#4f46e5"
                       radius={[3, 3, 0, 0]}
                     />
@@ -350,11 +367,10 @@ export default function AuditWorkspace({
 
             <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
               <h3 className="text-sm font-semibold text-slate-900">
-                Booth-Wise Electoral Change Ledger Breakdown (Record Counts)
+                {auditT.chart2Title}
               </h3>
               <p className="mt-0.5 text-xs text-slate-500">
-                Traceable decomposition into Additions, Cross-Booth Transfers,
-                Modifications, and Net Deletions.
+                {auditT.chart2Sub}
               </p>
               <div className="mt-4 h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -367,25 +383,25 @@ export default function AuditWorkspace({
                     <Bar
                       dataKey="added"
                       stackId="a"
-                      name="Added"
+                      name={auditT.chart2Added}
                       fill="#4f46e5"
                     />
                     <Bar
                       dataKey="transferredOut"
                       stackId="a"
-                      name="Transferred (Split)"
+                      name={auditT.chart2Transferred}
                       fill="#10b981"
                     />
                     <Bar
                       dataKey="modified"
                       stackId="a"
-                      name="Modified"
+                      name={auditT.chart2Modified}
                       fill="#0ea5e9"
                     />
                     <Bar
                       dataKey="deleted"
                       stackId="a"
-                      name="Net Deleted"
+                      name={auditT.chart2Deleted}
                       fill="#f59e0b"
                     />
                   </BarChart>
@@ -399,14 +415,15 @@ export default function AuditWorkspace({
             <div className="lg:col-span-5 space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-700">
-                  Statistical & Ledger Review Queue ({diffData.flags.length})
+                  {fmt(auditT.queueTitle, { count: diffData.flags.length })}
                 </h3>
                 <span className="text-xs text-slate-500">
-                  Select flag to inspect 5-part brief
+                  {auditT.queueSub}
                 </span>
               </div>
               {diffData.flags.map((flg) => {
                 const active = selectedFlag?.flag_id === flg.flag_id;
+                const statusText = revStatusLabels[flg.review_status] || flg.review_status.replaceAll("_", " ");
                 return (
                   <button
                     key={flg.flag_id}
@@ -428,17 +445,13 @@ export default function AuditWorkspace({
                     </div>
                     <div className="mt-2 flex items-center justify-between text-xs text-slate-600">
                       <span>
-                        Affected:{" "}
-                        <strong>{flg.affected_records_count}</strong> records
+                        {fmt(auditT.affectedRecords, { count: flg.affected_records_count })}
                       </span>
                       <span>
-                        Confidence:{" "}
-                        <strong>
-                          {(flg.explanation.confidence_level * 100).toFixed(0)}%
-                        </strong>{" "}
-                        • Status:{" "}
+                        {fmt(auditT.confidence, { pct: (flg.explanation.confidence_level * 100).toFixed(0) })}
+                        {" "}• {auditT.statusLabel}
                         <span className="font-medium text-indigo-700">
-                          {flg.review_status.replaceAll("_", " ")}
+                          {statusText}
                         </span>
                       </span>
                     </div>
@@ -455,7 +468,7 @@ export default function AuditWorkspace({
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       {severityBadge(selectedFlag.severity)}
                       <span className="font-mono text-xs text-slate-500">
-                        Flag ID: {selectedFlag.flag_id}
+                        {auditT.flagIdPrefix}{selectedFlag.flag_id}
                       </span>
                     </div>
                     <h3 className="mt-2 text-lg font-bold text-slate-900">
@@ -471,17 +484,15 @@ export default function AuditWorkspace({
                   <div className="rounded-lg border border-indigo-200 bg-indigo-50/50 p-4">
                     <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-indigo-900">
                       <span className="flex items-center gap-1.5">
-                        <Scale className="h-4 w-4" /> Statistical Baseline &
-                        Uncertainty Disclosure
+                        <Scale className="h-4 w-4" /> {auditT.uncertaintyHeader}
                       </span>
                       <span>
-                        Sample Size n ={" "}
-                        {selectedFlag.uncertainty.sample_size.toLocaleString()}
+                        {fmt(auditT.sampleSize, { n: selectedFlag.uncertainty.sample_size.toLocaleString() })}
                       </span>
                     </div>
                     <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4 text-xs">
                       <div className="rounded bg-white p-2 border border-indigo-100">
-                        <div className="text-slate-500">Observed Metric</div>
+                        <div className="text-slate-500">{auditT.observedMetric}</div>
                         <div className="font-mono text-sm font-bold text-slate-900">
                           {(
                             selectedFlag.uncertainty.point_estimate * 100
@@ -490,7 +501,7 @@ export default function AuditWorkspace({
                         </div>
                       </div>
                       <div className="rounded bg-white p-2 border border-indigo-100">
-                        <div className="text-slate-500">95% Wilson CI</div>
+                        <div className="text-slate-500">{auditT.wilsonCI}</div>
                         <div className="font-mono text-sm font-bold text-slate-900">
                           [
                           {(
@@ -504,7 +515,7 @@ export default function AuditWorkspace({
                         </div>
                       </div>
                       <div className="rounded bg-white p-2 border border-indigo-100">
-                        <div className="text-slate-500">2024–25 Baseline</div>
+                        <div className="text-slate-500">{auditT.baselineHistorical}</div>
                         <div className="font-mono text-sm font-bold text-slate-900">
                           {(
                             selectedFlag.uncertainty.historical_baseline_mean *
@@ -514,7 +525,7 @@ export default function AuditWorkspace({
                         </div>
                       </div>
                       <div className="rounded bg-white p-2 border border-indigo-100">
-                        <div className="text-slate-500">Z-Score Deviation</div>
+                        <div className="text-slate-500">{auditT.zScoreDeviation}</div>
                         <div className="font-mono text-sm font-bold text-indigo-700">
                           {selectedFlag.uncertainty.z_score >= 0 ? "+" : ""}
                           {selectedFlag.uncertainty.z_score}σ
@@ -530,21 +541,21 @@ export default function AuditWorkspace({
                   <div className="space-y-4 text-sm">
                     <div>
                       <h4 className="font-semibold text-slate-900">
-                        1. What Changed (Ledger Evidence)
+                        {auditT.sec1Title}
                       </h4>
                       <p className="mt-1 text-slate-700">
                         {selectedFlag.explanation.what_changed}
                       </p>
                       <div className="mt-2 flex flex-wrap items-center gap-1.5">
                         <span className="text-xs text-slate-500">
-                          Trace sample EPICs:
+                          {auditT.traceSampleEpics}
                         </span>
                         {selectedFlag.sample_epic_ids.map((ep) => (
                           <button
                             key={ep}
                             onClick={() => onInspectEpicInVerify(ep)}
                             className="rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-indigo-700 hover:bg-indigo-100"
-                            title="Inspect longitudinal citizen record"
+                            title={auditT.inspectCitizenTooltip}
                           >
                             {ep} ↗
                           </button>
@@ -554,7 +565,7 @@ export default function AuditWorkspace({
 
                     <div>
                       <h4 className="font-semibold text-slate-900">
-                        2. Exact Deterministic Rule Triggered
+                        {auditT.sec2Title}
                       </h4>
                       <p className="mt-1 text-slate-700">
                         {selectedFlag.explanation.rule_triggered}
@@ -568,7 +579,7 @@ export default function AuditWorkspace({
                       <div className="rounded-lg border border-emerald-200 bg-emerald-50/40 p-3.5">
                         <h4 className="font-semibold text-emerald-950 flex items-center gap-1.5 text-xs uppercase tracking-wide">
                           <ShieldCheck className="h-4 w-4 text-emerald-700" />
-                          3. Innocent / Administrative Explanations
+                          {auditT.sec3Title}
                         </h4>
                         <ul className="mt-2 list-disc space-y-1.5 pl-4 text-xs text-slate-700">
                           {selectedFlag.explanation.innocent_explanations.map(
@@ -582,7 +593,7 @@ export default function AuditWorkspace({
                       <div className="rounded-lg border border-sky-200 bg-sky-50/40 p-3.5">
                         <h4 className="font-semibold text-sky-950 flex items-center gap-1.5 text-xs uppercase tracking-wide">
                           <HelpCircle className="h-4 w-4 text-sky-700" />
-                          4. Missing Evidence (Not in Public PDFs)
+                          {auditT.sec4Title}
                         </h4>
                         <ul className="mt-2 list-disc space-y-1.5 pl-4 text-xs text-slate-700">
                           {selectedFlag.explanation.missing_evidence.map(
@@ -596,17 +607,17 @@ export default function AuditWorkspace({
 
                     <div className="rounded-lg border border-slate-200 bg-slate-50 p-3.5">
                       <h4 className="font-semibold text-slate-900 text-xs uppercase tracking-wide">
-                        5. Next Non-Partisan Verification Step
+                        {auditT.sec5Title}
                       </h4>
                       <p className="mt-1 text-xs text-slate-700">
                         {selectedFlag.explanation.next_verification_step}
                       </p>
                       <div className="mt-2 border-t border-slate-200 pt-2 text-xs text-slate-500">
-                        <strong>Confidence Calibration (
-                        {(selectedFlag.explanation.confidence_level * 100).toFixed(
-                          0
-                        )}
-                        %):</strong>{" "}
+                        <strong>
+                          {fmt(auditT.confidenceCalibration, {
+                            pct: (selectedFlag.explanation.confidence_level * 100).toFixed(0),
+                          })}
+                        </strong>{" "}
                         {selectedFlag.explanation.confidence_basis}
                       </div>
                     </div>
@@ -619,14 +630,14 @@ export default function AuditWorkspace({
                   >
                     <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-800">
                       <MessageSquarePlus className="h-4 w-4 text-indigo-600" />
-                      Append Reviewer Finding to Hash-Chained Audit Log
+                      {auditT.formTitle}
                     </div>
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       <input
                         type="text"
                         value={reviewerRole}
                         onChange={(e) => setReviewerRole(e.target.value)}
-                        placeholder="Reviewer role / org"
+                        placeholder={auditT.formRolePlaceholder}
                         className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs"
                       />
                       <select
@@ -639,13 +650,13 @@ export default function AuditWorkspace({
                         className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs"
                       >
                         <option value="EVIDENCE_NOTE_ADDED">
-                          Attach Documentary Note
+                          {auditT.formActionEvidence}
                         </option>
                         <option value="MARKED_EXPLAINED_ADMIN_SHIFT">
-                          Mark Explained by Admin Order
+                          {auditT.formActionExplained}
                         </option>
                         <option value="ESCALATED_FOR_FIELD_CHECK">
-                          Request Authorized BLO/ERO Check
+                          {auditT.formActionEscalate}
                         </option>
                       </select>
                     </div>
@@ -654,28 +665,27 @@ export default function AuditWorkspace({
                         type="text"
                         value={reviewNote}
                         onChange={(e) => setReviewNote(e.target.value)}
-                        placeholder="Enter factual verification note (min 5 chars, never overwrites original flag)..."
+                        placeholder={auditT.formNotePlaceholder}
                         className="sm:col-span-2 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs"
                       />
                       <input
                         type="text"
                         value={reviewRef}
                         onChange={(e) => setReviewRef(e.target.value)}
-                        placeholder="Doc ref (e.g. Gazette #14)"
+                        placeholder={auditT.formRefPlaceholder}
                         className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-mono"
                       />
                     </div>
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-[11px] text-slate-500">
-                        Appends SHA-256 hash-linked entry included in signed
-                        PollToll Assurance receipts.
+                        {auditT.formNotice}
                       </span>
                       <button
                         type="submit"
                         disabled={savingNote || reviewNote.trim().length < 5}
                         className="rounded-lg bg-indigo-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
                       >
-                        {savingNote ? "Logging..." : "Append to Ledger"}
+                        {savingNote ? auditT.formSubmittingBtn : auditT.formSubmitBtn}
                       </button>
                     </div>
                     {noteSavedBanner && (
@@ -695,11 +705,10 @@ export default function AuditWorkspace({
               <div>
                 <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
                   <Layers className="h-4 w-4 text-indigo-600" />
-                  Source-Linked Electoral Change Ledger Records
+                  {auditT.tableTitle}
                 </h3>
                 <p className="text-xs text-slate-500">
-                  Every row links to exact Reference & Target snapshot SHA-256s,
-                  polling station part, serial number, and supplement batch.
+                  {auditT.tableSub}
                 </p>
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -721,7 +730,7 @@ export default function AuditWorkspace({
                         : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                     }`}
                   >
-                    {t.replace("_", " ")}
+                    {changeLabels[t] || t.replace("_", " ")}
                   </button>
                 ))}
               </div>
@@ -731,13 +740,13 @@ export default function AuditWorkspace({
               <table className="min-w-full divide-y divide-slate-200 text-left text-xs">
                 <thead className="bg-slate-50 font-semibold text-slate-600">
                   <tr>
-                    <th className="px-3 py-2">Ledger ID</th>
-                    <th className="px-3 py-2">Synthetic EPIC</th>
-                    <th className="px-3 py-2">Elector (Synth)</th>
-                    <th className="px-3 py-2">Change Classification</th>
-                    <th className="px-3 py-2">Booth / Serial Lineage</th>
-                    <th className="px-3 py-2">Field Delta</th>
-                    <th className="px-3 py-2">Supplement Source Ref</th>
+                    <th className="px-3 py-2">{auditT.colLedgerId}</th>
+                    <th className="px-3 py-2">{auditT.colEpic}</th>
+                    <th className="px-3 py-2">{auditT.colElector}</th>
+                    <th className="px-3 py-2">{auditT.colClassification}</th>
+                    <th className="px-3 py-2">{auditT.colLineage}</th>
+                    <th className="px-3 py-2">{auditT.colDelta}</th>
+                    <th className="px-3 py-2">{auditT.colSupplementRef}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
@@ -769,7 +778,7 @@ export default function AuditWorkspace({
                               : "bg-indigo-100 text-indigo-900"
                           }`}
                         >
-                          {row.change_type}
+                          {changeLabels[row.change_type] || row.change_type}
                         </span>
                       </td>
                       <td className="px-3 py-2 font-mono text-slate-600">
@@ -785,7 +794,7 @@ export default function AuditWorkspace({
                         {Object.keys(row.modified_fields).length > 0
                           ? JSON.stringify(row.modified_fields)
                           : row.age_before && row.age_after
-                          ? `age ${row.age_before}→${row.age_after}`
+                          ? fmt(auditT.ageDeltaText, { before: row.age_before, after: row.age_after })
                           : row.house_no}
                       </td>
                       <td className="px-3 py-2 font-mono text-slate-500">

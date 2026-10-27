@@ -703,12 +703,28 @@ def _deterministic_claim_response(
             disputed_interpretations=disputed[lang],
             unprovable_from_public_data=unprovable[lang],
             confidence_level=0.98,
-            confidence_basis="Deterministic 1-to-1 EPIC lineage match across published constituency snapshots.",
-            reasoning_steps=[
-                "Queried PS-109 outflow between v2025_final and v2026_draft.",
-                "Joined missing PS-109 EPIC IDs against all active booths in AC-041 and matched 338 records in PS-110.",
-                "Separated verified booth-level count shift from the disputed 'mass disenfranchisement' framing.",
-            ],
+            confidence_basis={
+                "en": "Deterministic 1-to-1 EPIC lineage match across published constituency snapshots.",
+                "hi": "प्रकाशित निर्वाचन क्षेत्र स्नैपशॉट में 1-से-1 EPIC वंशावली का सटीक मिलान।",
+                "gu": "પ્રકાશિત મતવિસ્તાર સ્નેપશોટમાં 1-થી-1 EPIC વંશાવળીનો ચોક્કસ મેળ.",
+            }[lang],
+            reasoning_steps={
+                "en": [
+                    "Queried PS-109 outflow between v2025_final and v2026_draft.",
+                    "Joined missing PS-109 EPIC IDs against all active booths in AC-041 and matched 338 records in PS-110.",
+                    "Separated verified booth-level count shift from the disputed 'mass disenfranchisement' framing.",
+                ],
+                "hi": [
+                    "v2025_final और v2026_draft के बीच PS-109 से निकले मतदाताओं की पहचान की।",
+                    "AC-041 के सभी सक्रिय बूथों में लापता PS-109 EPIC नंबरों का मिलान किया और PS-110 में 338 रिकॉर्ड पाए।",
+                    "सत्यापित बूथ-स्तरीय संख्यात्मक बदलाव को 'सामूहिक नाम कटने' की विवादित व्याख्या से अलग किया।",
+                ],
+                "gu": [
+                    "v2025_final અને v2026_draft વચ્ચે PS-109 માંથી બહાર થયેલા મતદારોની ગણતરી કરી.",
+                    "AC-041 ના તમામ સક્રિય બૂથમાં ખૂટતા PS-109 EPIC નંબરો તપાસ્યા અને PS-110 માં 338 રેકોર્ડ્સ મેળવ્યા.",
+                    "ચકાસાયેલ બૂથ-સ્તરીય સંખ્યાત્મક ફેરફારને વિવાદિત 'સામૂહિક મતદાર કમી' ના અર્થઘટનથી અલગ કર્યો.",
+                ],
+            }[lang],
             referenced_booths=["PS-109", "PS-110"],
             neutrality_guardrail_note=neutrality_note,
             generated_by="deterministic-ledger-engine",
@@ -716,6 +732,86 @@ def _deterministic_claim_response(
 
     if primary == "PS-203":
         b203 = booth_map["PS-203"]
+        v_facts = {
+            "en": [
+                ClaimFindingItem(
+                    statement=f"House string `H-42/B` in `PS-203` increased from 6 electors in `{req.from_version}` to 64 electors in `{req.to_version}` (+58 supplement additions).",
+                    evidence_source="Electoral Change Ledger (`RULE_HOUSEHOLD_DENSITY@1.0.0`)",
+                )
+            ],
+            "hi": [
+                ClaimFindingItem(
+                    statement=f"`PS-203` में मकान संख्या `H-42/B` में मतदाता संख्या `{req.from_version}` के 6 से बढ़कर `{req.to_version}` में 64 हो गई (+58 पूरक वृद्धि)।",
+                    evidence_source="Electoral Change Ledger (`RULE_HOUSEHOLD_DENSITY@1.0.0`)",
+                )
+            ],
+            "gu": [
+                ClaimFindingItem(
+                    statement=f"`PS-203` માં મકાન નંબર `H-42/B` માં મતદારોની સંખ્યા `{req.from_version}` ના 6 થી વધીને `{req.to_version}` માં 64 થઈ (+58 પૂરક ઉમેરા).",
+                    evidence_source="Electoral Change Ledger (`RULE_HOUSEHOLD_DENSITY@1.0.0`)",
+                )
+            ],
+        }
+        d_interps = {
+            "en": [
+                ClaimFindingItem(
+                    statement="High elector count on one house string is NOT proof of unlawful registration; multi-unit tenements, worker dormitories, and unnumbered chawls routinely share a single plot number in published PDFs.",
+                    evidence_source="ECI Booth-Level Address Normalization Guidelines",
+                )
+            ],
+            "hi": [
+                ClaimFindingItem(
+                    statement="एक ही पते पर अधिक मतदाता होना गैरकानूनी पंजीकरण का प्रमाण नहीं है; चॉल, कर्मचारी छात्रावास और बहु-इकाई आवास प्रायः एक ही प्लॉट नंबर साझा करते हैं।",
+                    evidence_source="ECI बूथ-स्तरीय पता मानकीकरण दिशानिर्देश",
+                )
+            ],
+            "gu": [
+                ClaimFindingItem(
+                    statement="એક જ મકાન નંબર પર વધુ મતદારો હોવા તે ગેરકાયદે નોંધણીનો પુરાવો નથી; ચાલી, કામદાર છાત્રાલય અને બહુમાળી મકાનો સામાન્ય રીતે એક જ પ્લોટ નંબર ધરાવે છે.",
+                    evidence_source="ચૂંટણી પંચ બૂથ-સ્તરીય સરનામું સામાન્યકરણ માર્ગદર્શિકા",
+                )
+            ],
+        }
+        u_facts = {
+            "en": [
+                ClaimFindingItem(
+                    statement="Physical building capacity of `H-42/B` and whether BLO supervisory field verification was completed.",
+                    evidence_source="Requires municipal property record & BLO physical inspection checklist",
+                )
+            ],
+            "hi": [
+                ClaimFindingItem(
+                    statement="`H-42/B` की भौतिक भवन क्षमता और क्या बीएलओ पर्यवेक्षी स्थलीय सत्यापन पूरा हुआ था।",
+                    evidence_source="नगरपालिका संपत्ति रिकॉर्ड और बीएलओ भौतिक सत्यापन चेकलिस्ट आवश्यक",
+                )
+            ],
+            "gu": [
+                ClaimFindingItem(
+                    statement="`H-42/B` ની વાસ્તવિક રહેઠાણ ક્ષમતા અને શું BLO સુપરવાઇઝરી સ્થળ ચકાસણી પૂર્ણ થઈ હતી.",
+                    evidence_source="મ્યુનિસિપલ મિલકત રેકોર્ડ અને BLO ભૌતિક નિરીક્ષણ ચેકલિસ્ટ જરૂરી",
+                )
+            ],
+        }
+        conf_basis = {
+            "en": f"Exact string aggregation over n={b203.electors_to} published records in PS-203.",
+            "hi": f"PS-203 में प्रकाशित n={b203.electors_to} रिकॉर्ड पर सटीक स्ट्रिंग गणना।",
+            "gu": f"PS-203 માં પ્રકાશિત n={b203.electors_to} રેકોર્ડ્સ પર ચોક્કસ સ્ટ્રિંગ એકત્રીકરણ.",
+        }[lang]
+        r_steps = {
+            "en": [
+                "Verified exact count of `house_no = 'H-42/B'` across v2025_final (6) and v2026_draft (64).",
+                "Flagged for authorized field review while rejecting unsupported accusations of fraud.",
+            ],
+            "hi": [
+                "v2025_final (6) और v2026_draft (64) में `house_no = 'H-42/B'` की सटीक गणना सत्यापित की।",
+                "धोखाधड़ी के निराधार आरोपों को खारिज करते हुए अधिकृत क्षेत्रीय समीक्षा हेतु ध्वजांकित किया।",
+            ],
+            "gu": [
+                "v2025_final (6) અને v2026_draft (64) માં `house_no = 'H-42/B'` ની ચોક્કસ ગણતરી ચકાસી.",
+                "છેતરપિંડીના પાયાવિહોણા આક્ષેપોને નકારી કાઢીને અધિકૃત ક્ષેત્ર સમીક્ષા માટે ફ્લેગ કર્યું.",
+            ],
+        }[lang]
+
         return ClaimCheckResponse(
             claim_text=req.claim_text,
             language=lang,
@@ -724,45 +820,20 @@ def _deterministic_claim_response(
                 "hi": "एक पते (H-42/B) पर 64 मतदाता सत्यापित; केवल सूची से 'फर्जी मतदाता' का दावा सिद्ध नहीं होता",
                 "gu": "એક સરનામે (H-42/B) 64 મતદારોની નોંધણી ચકાસાયેલ; માત્ર યાદી પરથી 'બોગસ મતદાર' દાવો સાબિત થઈ શકતો નથી",
             }[lang],
-            verified_facts=[
-                ClaimFindingItem(
-                    statement=f"House string `H-42/B` in `PS-203` increased from 6 electors in `{req.from_version}` to 64 electors in `{req.to_version}` (+58 supplement additions).",
-                    evidence_source="Electoral Change Ledger (`RULE_HOUSEHOLD_DENSITY@1.0.0`)",
-                )
-            ],
-            disputed_interpretations=[
-                ClaimFindingItem(
-                    statement="High elector count on one house string is NOT proof of unlawful registration; multi-unit tenements, worker dormitories, and unnumbered chawls routinely share a single plot number in published PDFs.",
-                    evidence_source="ECI Booth-Level Address Normalization Guidelines",
-                )
-            ],
-            unprovable_from_public_data=[
-                ClaimFindingItem(
-                    statement="Physical building capacity of `H-42/B` and whether BLO supervisory field verification was completed.",
-                    evidence_source="Requires municipal property record & BLO physical inspection checklist",
-                )
-            ],
+            verified_facts=v_facts[lang],
+            disputed_interpretations=d_interps[lang],
+            unprovable_from_public_data=u_facts[lang],
             confidence_level=0.92,
-            confidence_basis=f"Exact string aggregation over n={b203.electors_to} published records in PS-203.",
-            reasoning_steps=[
-                "Verified exact count of `house_no = 'H-42/B'` across v2025_final (6) and v2026_draft (64).",
-                "Flagged for authorized field review while rejecting unsupported accusations of fraud.",
-            ],
+            confidence_basis=conf_basis,
+            reasoning_steps=r_steps,
             referenced_booths=["PS-203"],
             neutrality_guardrail_note=neutrality_note,
             generated_by="deterministic-ledger-engine",
         )
 
     b_ref = booth_map.get(primary, booth_map["PS-302"])
-    return ClaimCheckResponse(
-        claim_text=req.claim_text,
-        language=lang,
-        overall_assessment_label={
-            "en": f"Elevated Deletion Rate in {b_ref.booth_id} Statistically Verified ({b_ref.net_effective_deletion_rate * 100:.1f}%); Motive or Illegality Unprovable from Public Data",
-            "hi": f"बूथ {b_ref.booth_id} में उच्च विलोपन दर ({b_ref.net_effective_deletion_rate * 100:.1f}%) सांख्यिकीय रूप से सत्यापित; सार्वजनिक डेटा से दुर्भावना सिद्ध नहीं",
-            "gu": f"બૂથ {b_ref.booth_id} માં ઊંચો ડિલીશન દર ({b_ref.net_effective_deletion_rate * 100:.1f}%) આંકડાકીય રીતે ચકાસાયેલ; જાહેર ડેટા પરથી બદઈરાદો સાબિત થતો નથી",
-        }[lang],
-        verified_facts=[
+    del_facts = {
+        "en": [
             ClaimFindingItem(
                 statement=(
                     f"`{b_ref.booth_id}` recorded {b_ref.deleted_count} net deletions out of {b_ref.electors_from} electors "
@@ -772,25 +843,104 @@ def _deterministic_claim_response(
                 evidence_source=f"Statistical Anomaly Engine (`RULE_HIST_DEL_SPIKE@1.0.0`, dataset total net deletions={totals['deleted']})",
             )
         ],
-        disputed_interpretations=[
+        "hi": [
+            ClaimFindingItem(
+                statement=(
+                    f"`{b_ref.booth_id}` में {b_ref.electors_from} में से {b_ref.deleted_count} शुद्ध नाम कटे "
+                    f"({b_ref.net_effective_deletion_rate * 100:.1f}%, 95% CI [{b_ref.deletion_ci_lower_95 * 100:.1f}%, {b_ref.deletion_ci_upper_95 * 100:.1f}%]) "
+                    f"बनाम ऐतिहासिक आधाररेखा {b_ref.historical_deletion_baseline * 100:.1f}% (z = +{b_ref.z_score_vs_baseline:.1f}σ)।"
+                ),
+                evidence_source=f"सांख्यिकीय विसंगति इंजन (`RULE_HIST_DEL_SPIKE@1.0.0`)",
+            )
+        ],
+        "gu": [
+            ClaimFindingItem(
+                statement=(
+                    f"`{b_ref.booth_id}` માં {b_ref.electors_from} માંથી {b_ref.deleted_count} ચોખ્ખા નામ કમી થયા "
+                    f"({b_ref.net_effective_deletion_rate * 100:.1f}%, 95% CI [{b_ref.deletion_ci_lower_95 * 100:.1f}%, {b_ref.deletion_ci_upper_95 * 100:.1f}%]) "
+                    f"વિરુદ્ધ ઐતિહાસિક આધારરેખા {b_ref.historical_deletion_baseline * 100:.1f}% (z = +{b_ref.z_score_vs_baseline:.1f}σ)."
+                ),
+                evidence_source=f"આંકડાકીય વિસંગતતા એન્જિન (`RULE_HIST_DEL_SPIKE@1.0.0`)",
+            )
+        ],
+    }
+    del_disputed = {
+        "en": [
             ClaimFindingItem(
                 statement="A statistical spike establishes where human auditors should look—it does not establish wrongful deletion, as urban relocation, hostel graduation, or deceased-backlog cleanup can produce localized spikes.",
                 evidence_source="PollToll Epistemic Audit Standard",
             )
         ],
-        unprovable_from_public_data=[
+        "hi": [
+            ClaimFindingItem(
+                statement="सांख्यिकीय उछाल केवल यह बताता है कि मानवीय लेखापरीक्षकों को कहां जांच करनी चाहिए—यह गलत विलोपन साबित नहीं करता, क्योंकि शहरी स्थानांतरण या मृत नामों की सफाई से स्थानीय उछाल हो सकता है।",
+                evidence_source="पोलटोल ज्ञानमीमांसा ऑडिट मानक",
+            )
+        ],
+        "gu": [
+            ClaimFindingItem(
+                statement="આંકડાકીય ઉછાળો માત્ર એ દર્શાવે છે કે માનવીય ઓડિટર્સે ક્યાં તપાસ કરવી જોઈએ—તે ગેરકાયદે કમી સાબિત કરતું નથી, કારણ કે શહેરી સ્થળાંતર કે જૂના નામોની સફાઈથી સ્થાનિક ઉછાળો આવી શકે છે.",
+                evidence_source="પોલટોલ ઓડિટ સ્ટાન્ડર્ડ",
+            )
+        ],
+    }
+    del_unprovable = {
+        "en": [
             ClaimFindingItem(
                 statement="Whether Rule 21-A statutory notices and house-to-house BLO verification checklists were duly served for each deleted record.",
                 evidence_source="Non-public ERO administrative case files",
             )
         ],
-        confidence_level=0.94,
-        confidence_basis=f"Non-overlapping 95% Wilson confidence interval over n={b_ref.electors_from} records.",
-        reasoning_steps=[
+        "hi": [
+            ClaimFindingItem(
+                statement="क्या प्रत्येक हटाए गए रिकॉर्ड के लिए नियम 21-A वैधानिक नोटिस और घर-घर बीएलओ सत्यापन चेकलिस्ट विधिवत तामील की गई थी।",
+                evidence_source="गैर-सार्वजनिक ERO प्रशासनिक फाइलें",
+            )
+        ],
+        "gu": [
+            ClaimFindingItem(
+                statement="શું દરેક કમી થયેલા રેકોર્ડ માટે નિયમ 21-A વૈધાનિક નોટિસ અને ઘર-ઘર BLO ચકાસણી ચેકલિસ્ટ યોગ્ય રીતે બજાવવામાં આવી હતી.",
+                evidence_source="બિન-જાહેર ERO વહીવટી કેસ ફાઈલો",
+            )
+        ],
+    }
+    del_conf_basis = {
+        "en": f"Non-overlapping 95% Wilson confidence interval over n={b_ref.electors_from} records.",
+        "hi": f"n={b_ref.electors_from} रिकॉर्ड पर गैर-अतिव्यापी 95% विल्सन विश्वास अंतराल।",
+        "gu": f"n={b_ref.electors_from} રેકોર્ડ્સ પર ઓવરલેપ ન થતો 95% વિલ્સન વિશ્વાસ અંતરાલ.",
+    }[lang]
+    del_reasoning = {
+        "en": [
             f"Checked cross-booth transfers out of `{b_ref.booth_id}` ({b_ref.transferred_out_count}) to rule out booth-splitting.",
             f"Compared net deletion rate against 2024–2025 baseline ({b_ref.historical_deletion_baseline * 100:.1f}%).",
             "Identified missing administrative records required for human verification.",
         ],
+        "hi": [
+            f"बूथ-विभाजन की संभावना को खारिज करने के लिए `{b_ref.booth_id}` से बाहर स्थानांतरण ({b_ref.transferred_out_count}) की जांच की।",
+            f"2024–2025 की आधाररेखा ({b_ref.historical_deletion_baseline * 100:.1f}%) के विरुद्ध शुद्ध विलोपन दर की तुलना की।",
+            "मानवीय सत्यापन के लिए आवश्यक अनुपलब्ध प्रशासनिक रिकॉर्ड की पहचान की।",
+        ],
+        "gu": [
+            f"બૂથ-વિભાજનને નકારવા માટે `{b_ref.booth_id}` માંથી બહાર થયેલી તબદીલીઓ ({b_ref.transferred_out_count}) તપાસી.",
+            f"2024–2025 આધારરેખા ({b_ref.historical_deletion_baseline * 100:.1f}%) સામે ચોખ્ખા કમી દરની સરખામણી કરી.",
+            "માનવીય ચકાસણી માટે જરૂરી ખૂટતા વહીવટી રેકોર્ડ્સ ઓળખ્યા.",
+        ],
+    }[lang]
+
+    return ClaimCheckResponse(
+        claim_text=req.claim_text,
+        language=lang,
+        overall_assessment_label={
+            "en": f"Elevated Deletion Rate in {b_ref.booth_id} Statistically Verified ({b_ref.net_effective_deletion_rate * 100:.1f}%); Motive or Illegality Unprovable from Public Data",
+            "hi": f"बूथ {b_ref.booth_id} में उच्च विलोपन दर ({b_ref.net_effective_deletion_rate * 100:.1f}%) सांख्यिकीय रूप से सत्यापित; सार्वजनिक डेटा से दुर्भावना सिद्ध नहीं",
+            "gu": f"બૂથ {b_ref.booth_id} માં ઊંચો ડિલીશન દર ({b_ref.net_effective_deletion_rate * 100:.1f}%) આંકડાકીય રીતે ચકાસાયેલ; જાહેર ડેટા પરથી બદઈરાદો સાબિત થતો નથી",
+        }[lang],
+        verified_facts=del_facts[lang],
+        disputed_interpretations=del_disputed[lang],
+        unprovable_from_public_data=del_unprovable[lang],
+        confidence_level=0.94,
+        confidence_basis=del_conf_basis,
+        reasoning_steps=del_reasoning,
         referenced_booths=[b_ref.booth_id],
         neutrality_guardrail_note=neutrality_note,
         generated_by="deterministic-ledger-engine",
@@ -840,7 +990,7 @@ def assist_citizen(
         if m:
             epic = m.group(0).upper()
 
-    lookup = lookup_citizen_epic(con, epic) if epic else None
+    lookup = lookup_citizen_epic(con, epic, lang=req.language) if epic else None
 
     # 3. Free-tier optimization: pure EPIC lookups with no custom natural-language question
     # are answered deterministically in <3ms (0 API quota spent, 100% exact).
@@ -918,17 +1068,41 @@ def assist_citizen(
             answer_text = lookup.plain_language_summary[req.language]
             steps_out = lookup.official_next_steps[req.language]
             forms_out = lookup.relevant_eci_forms
-            reasoning_out = [
-                f"Queried longitudinal DuckDB snapshots (`v2024_final` .. `v2026_draft`) for `{lookup.epic_id}`.",
-                f"Classified record lineage status as `{lookup.current_status}`.",
-                f"Mapped status to statutory ECI procedures in {LANGUAGE_NAMES[req.language]}.",
-            ]
+            if req.language == "hi":
+                reasoning_out = [
+                    f"`{lookup.epic_id}` के लिए क्रमिक DuckDB स्नैपशॉट (`v2024_final` .. `v2026_draft`) की जांच की गई।",
+                    f"रिकॉर्ड की स्थिति को `{lookup.current_status}` के रूप में वर्गीकृत किया गया।",
+                    f"स्थिति को {LANGUAGE_NAMES[req.language]} में आधिकारिक ECI प्रक्रियाओं से मैप किया गया।",
+                ]
+            elif req.language == "gu":
+                reasoning_out = [
+                    f"`{lookup.epic_id}` માટે ઐતિહાસિક DuckDB સ્નેપશોટ્સ (`v2024_final` .. `v2026_draft`) ની તપાસ કરી.",
+                    f"રેકોર્ડ વંશાવલી સ્થિતિને `{lookup.current_status}` તરીકે વર્ગીકૃત કરી.",
+                    f"સ્થિતિને {LANGUAGE_NAMES[req.language]} માં સત્તાવાર ECI પ્રક્રિયાઓ સાથે સાંકળી.",
+                ]
+            else:
+                reasoning_out = [
+                    f"Queried longitudinal DuckDB snapshots (`v2024_final` .. `v2026_draft`) for `{lookup.epic_id}`.",
+                    f"Classified record lineage status as `{lookup.current_status}`.",
+                    f"Mapped status to statutory ECI procedures in {LANGUAGE_NAMES[req.language]}.",
+                ]
         else:
             answer_text, steps_out, forms_out = _general_citizen_guidance(query_text, req.language)
-            reasoning_out = [
-                "Parsed citizen procedural question without a specific EPIC ID.",
-                f"Retrieved official ECI Special Summary Revision guidance (Forms 6, 7, 8) in {LANGUAGE_NAMES[req.language]}.",
-            ]
+            if req.language == "hi":
+                reasoning_out = [
+                    "विशिष्ट EPIC ID के बिना नागरिक प्रक्रियात्मक प्रश्न का विश्लेषण किया गया।",
+                    f"{LANGUAGE_NAMES[req.language]} में आधिकारिक ECI विशेष संक्षिप्त पुनरीक्षण मार्गदर्शन (फॉर्म 6, 7, 8) प्राप्त किया गया।",
+                ]
+            elif req.language == "gu":
+                reasoning_out = [
+                    "ચોક્કસ EPIC ID વગર નાગરિક પ્રક્રિયાત્મક પ્રશ્નનું વિશ્લેષણ કર્યું.",
+                    f"{LANGUAGE_NAMES[req.language]} માં સત્તાવાર ECI ખાસ સંક્ષિપ્ત સુધારણા માર્ગદર્શન (ફોર્મ 6, 7, 8) મેળવ્યું.",
+                ]
+            else:
+                reasoning_out = [
+                    "Parsed citizen procedural question without a specific EPIC ID.",
+                    f"Retrieved official ECI Special Summary Revision guidance (Forms 6, 7, 8) in {LANGUAGE_NAMES[req.language]}.",
+                ]
 
     # 4. Optional Gemini TTS (only when explicitly requested; browser speechSynthesis handles default free readout)
     tts_b64: str | None = None

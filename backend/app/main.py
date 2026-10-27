@@ -15,6 +15,7 @@ from app.data.generator import ensure_synthetic_database, list_snapshots
 from app.engine.anomaly import RULE_PACK_VERSION, RULES_CATALOG, detect_anomalies
 from app.engine.ingest import IngestSnapshotRequest, ingest_csv_snapshot
 from app.engine.ledger import compute_change_ledger, lookup_citizen_epic
+from app.i18n import normalize_lang, pick
 from app.engine.receipts import (
     append_correction_event,
     ensure_correction_table,
@@ -127,8 +128,8 @@ def api_infra_quota() -> dict[str, Any]:
 
 
 @app.get("/api/v1/snapshots", response_model=list[SnapshotMeta])
-def api_snapshots() -> list[SnapshotMeta]:
-    return list_snapshots(get_db())
+def api_snapshots(lang: str = Query(default="en")) -> list[SnapshotMeta]:
+    return list_snapshots(get_db(), lang=lang)
 
 
 @app.get("/api/v1/rules")
@@ -140,8 +141,8 @@ def api_rules() -> dict[str, Any]:
 
 
 @app.get("/api/v1/gap-analysis", response_model=list[GapAnalysisItem])
-def api_gap_analysis() -> list[GapAnalysisItem]:
-    return get_eronet_gap_matrix()
+def api_gap_analysis(lang: str = Query(default="en")) -> list[GapAnalysisItem]:
+    return get_eronet_gap_matrix(lang=lang)
 
 
 @app.get("/api/v1/audit/diff", response_model=LedgerDiffResponse)
@@ -149,18 +150,20 @@ def api_audit_diff(
     from_version: str = Query(default="v2025_final"),
     to_version: str = Query(default="v2026_draft"),
     sample_limit: int = Query(default=100, ge=10, le=500),
+    lang: str = Query(default="en"),
 ) -> LedgerDiffResponse:
     if from_version == to_version:
         raise HTTPException(status_code=400, detail="from_version and to_version must be distinct snapshots.")
     con = get_db()
+    lang_code = normalize_lang(lang)
     try:
         s_from, s_to, totals, booth_summaries, sample_entries = compute_change_ledger(
-            con, from_version=from_version, to_version=to_version, sample_limit=sample_limit
+            con, from_version=from_version, to_version=to_version, sample_limit=sample_limit, lang=lang_code
         )
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
-    flags = detect_anomalies(con, booth_summaries, from_version=from_version, to_version=to_version)
+    flags = detect_anomalies(con, booth_summaries, from_version=from_version, to_version=to_version, lang=lang_code)
     ensure_correction_table(con, flags)
 
     # Reflect latest reviewer annotation status on flags
@@ -171,18 +174,28 @@ def api_audit_diff(
         if f.flag_id in annotated_flag_ids and f.review_status == "OPEN_FOR_REVIEW":
             f.review_status = "ANNOTATED_BY_REVIEWER"
 
+    baselines_used = pick(
+        lang_code,
+        ["v2024_final -> v2025_draft", "v2025_draft -> v2025_final"],
+        ["2024 अंतिम -> 2025 प्रारूप", "2025 प्रारूप -> 2025 अंतिम"],
+        ["2024 અંતિમ -> 2025 મુસદ્દો", "2025 મુસદ્દો -> 2025 અંતિમ"],
+    )
+    disclaimer = pick(
+        lang_code,
+        "100% Synthetic Electoral Roll Data. Statistical flags highlight unusual change patterns for authorized human review and never establish fraud or wrongdoing.",
+        "100% सिंथेटिक मतदाता डेटासेट। सांख्यिकीय फ्लैग केवल अधिकृत मानवीय समीक्षा के लिए असामान्य परिवर्तन पैटर्न को रेखांकित करते हैं और कभी भी धोखाधड़ी या गड़बड़ी साबित नहीं करते हैं।",
+        "100% સિન્થેટિક મતદાર ડેટાસેટ. આંકડાકીય ફ્લેગ માત્ર અધિકૃત માનવીય સમીક્ષા માટે અસામાન્ય ફેરફારની પેટર્ન દર્શાવે છે અને ક્યારેય છેતરપિંડી કે ગેરરીતિ સાબિત કરતા નથી.",
+    )
+
     return LedgerDiffResponse(
         from_snapshot=s_from,
         to_snapshot=s_to,
-        historical_baselines_used=["v2024_final -> v2025_draft", "v2025_draft -> v2025_final"],
+        historical_baselines_used=baselines_used,
         totals=totals,
         booth_summaries=booth_summaries,
         flags=flags,
         sample_ledger_entries=sample_entries,
-        neutrality_disclaimer=(
-            "100% Synthetic Electoral Roll Data. Statistical flags highlight unusual change patterns "
-            "for authorized human review and never establish fraud or wrongdoing."
-        ),
+        neutrality_disclaimer=disclaimer,
     )
 
 
@@ -215,8 +228,8 @@ def api_verify_receipt(req: VerifyReceiptRequest) -> VerifyReceiptResponse:
 
 
 @app.get("/api/v1/verify/citizen/{epic_id}", response_model=CitizenLookupResponse)
-def api_citizen_lookup(epic_id: str) -> CitizenLookupResponse:
-    return lookup_citizen_epic(get_db(), epic_id)
+def api_citizen_lookup(epic_id: str, lang: str = Query(default="en")) -> CitizenLookupResponse:
+    return lookup_citizen_epic(get_db(), epic_id, lang=lang)
 
 
 @app.post("/api/v1/verify/assistant", response_model=CitizenAssistantResponse)

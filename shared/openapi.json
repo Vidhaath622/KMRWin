@@ -88,17 +88,39 @@
       "get": {
         "summary": "Api Snapshots",
         "operationId": "api_snapshots_api_v1_snapshots_get",
+        "parameters": [
+          {
+            "name": "lang",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "en",
+              "title": "Lang"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/SnapshotMeta"
                   },
-                  "type": "array",
                   "title": "Response Api Snapshots Api V1 Snapshots Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -130,17 +152,39 @@
       "get": {
         "summary": "Api Gap Analysis",
         "operationId": "api_gap_analysis_api_v1_gap_analysis_get",
+        "parameters": [
+          {
+            "name": "lang",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "en",
+              "title": "Lang"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/GapAnalysisItem"
                   },
-                  "type": "array",
                   "title": "Response Api Gap Analysis Api V1 Gap Analysis Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -183,6 +227,16 @@
               "minimum": 10,
               "default": 100,
               "title": "Sample Limit"
+            }
+          },
+          {
+            "name": "lang",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "en",
+              "title": "Lang"
             }
           }
         ],
@@ -368,6 +422,16 @@
             "schema": {
               "type": "string",
               "title": "Epic Id"
+            }
+          },
+          {
+            "name": "lang",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "en",
+              "title": "Lang"
             }
           }
         ],

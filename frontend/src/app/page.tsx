@@ -16,6 +16,8 @@ import InfraConsole from "@/components/InfraConsole";
 import VerifyPortal from "@/components/VerifyPortal";
 import { fetchAuditDiff, fetchSnapshots } from "@/lib/api";
 import { UI_STRINGS } from "@/lib/i18n";
+import { BRAND, fmt } from "@/lib/locales/common";
+import { PAGE_LOCALE } from "@/lib/locales/page";
 import { LanguageCode, LedgerDiffResponse, SnapshotMeta } from "@/lib/types";
 
 type ActivePlane = "audit" | "assurance" | "verify" | "infra";
@@ -33,35 +35,39 @@ export default function PollTollControlPlane() {
   const [preselectedEpic, setPreselectedEpic] = useState<string | null>(null);
 
   const t = UI_STRINGS[language];
+  const pageT = PAGE_LOCALE[language];
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const loadDiff = useCallback(async (fromV: string, toV: string) => {
-    setLoadingDiff(true);
-    setBackendError(null);
-    try {
-      const data = await fetchAuditDiff(fromV, toV);
-      setDiffData(data);
-    } catch (err) {
-      setBackendError(String(err));
-    } finally {
-      setLoadingDiff(false);
-    }
-  }, []);
+  const loadDiff = useCallback(
+    async (fromV: string, toV: string, lang: LanguageCode) => {
+      setLoadingDiff(true);
+      setBackendError(null);
+      try {
+        const data = await fetchAuditDiff(fromV, toV, lang);
+        setDiffData(data);
+      } catch (err) {
+        setBackendError(String(err));
+      } finally {
+        setLoadingDiff(false);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
-    void fetchSnapshots()
+    void fetchSnapshots(language)
       .then((snaps) => {
         setSnapshots(snaps);
       })
       .catch((err) => setBackendError(String(err)));
-  }, []);
+  }, [language]);
 
   useEffect(() => {
-    void loadDiff(fromVersion, toVersion);
-  }, [fromVersion, toVersion, loadDiff]);
+    void loadDiff(fromVersion, toVersion, language);
+  }, [fromVersion, toVersion, language, loadDiff]);
 
   function handleInspectEpicInVerify(epicId: string) {
     setPreselectedEpic(epicId);
@@ -86,13 +92,15 @@ export default function PollTollControlPlane() {
           <div className="flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center gap-1.5 text-emerald-400 font-semibold">
               <Activity className="h-3.5 w-3.5" />
-              PROTOCOL: ONLINE
+              {pageT.telemetryProtocol}
             </span>
             <span className="text-slate-600">|</span>
-            <span>RULE_PACK: polltoll-rules@1.0.0</span>
+            <span>
+              {fmt(pageT.telemetryRulePack, { pack: "polltoll-rules@1.0.0" })}
+            </span>
             <span className="text-slate-600 hidden sm:inline">|</span>
             <span className="hidden sm:inline">
-              ATTESTATION: Ed25519 + SHA-256
+              {pageT.telemetryAttestation}
             </span>
           </div>
           <div className="text-amber-300/90 truncate">{t.guardrailBanner}</div>
@@ -109,9 +117,11 @@ export default function PollTollControlPlane() {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-xl font-bold tracking-tight">PollToll</h1>
+                  <h1 className="text-xl font-bold tracking-tight">
+                    {BRAND[language]}
+                  </h1>
                   <span className="rounded bg-slate-800 px-2 py-0.5 font-mono text-xs text-indigo-300 border border-slate-700">
-                    Audit Infrastructure v0.1
+                    {pageT.brandBadge}
                   </span>
                 </div>
                 <p className="text-xs text-slate-400">{t.tagline}</p>
@@ -151,26 +161,26 @@ export default function PollTollControlPlane() {
               {
                 id: "audit" as const,
                 icon: GitCompare,
-                title: t.tabAudit,
-                sub: t.tabAuditSub,
+                title: pageT.tabAudit,
+                sub: pageT.tabAuditSub,
               },
               {
                 id: "assurance" as const,
                 icon: FileKey2,
-                title: t.tabAssurance,
-                sub: t.tabAssuranceSub,
+                title: pageT.tabAssurance,
+                sub: pageT.tabAssuranceSub,
               },
               {
                 id: "verify" as const,
                 icon: ShieldCheck,
-                title: t.tabVerify,
-                sub: t.tabVerifySub,
+                title: pageT.tabVerify,
+                sub: pageT.tabVerifySub,
               },
               {
                 id: "infra" as const,
                 icon: TerminalSquare,
-                title: "Infra / API & CLI",
-                sub: "Snapshot Ingestion & SDKs",
+                title: pageT.tabInfra,
+                sub: pageT.tabInfraSub,
               },
             ].map((item) => {
               const Icon = item.icon;
@@ -213,13 +223,13 @@ export default function PollTollControlPlane() {
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6">
         {backendError && (
           <div className="mb-6 rounded-xl border border-rose-300 bg-rose-50 p-4 text-xs text-rose-900 font-mono">
-            Backend connection warning ({backendError}). Ensure FastAPI is
-            running on <code>http://127.0.0.1:8000</code>.
+            {fmt(pageT.backendErrorWarning, { error: backendError })}
           </div>
         )}
 
         {plane === "audit" && (
           <AuditWorkspace
+            language={language}
             snapshots={snapshots}
             fromVersion={fromVersion}
             toVersion={toVersion}
@@ -230,12 +240,16 @@ export default function PollTollControlPlane() {
             diffData={diffData}
             loading={loadingDiff}
             onInspectEpicInVerify={handleInspectEpicInVerify}
-            onRefreshDiff={() => void loadDiff(fromVersion, toVersion)}
+            onRefreshDiff={() => void loadDiff(fromVersion, toVersion, language)}
           />
         )}
 
         {plane === "assurance" && (
-          <AssuranceCenter fromVersion={fromVersion} toVersion={toVersion} />
+          <AssuranceCenter
+            language={language}
+            fromVersion={fromVersion}
+            toVersion={toVersion}
+          />
         )}
 
         {plane === "verify" && (
@@ -249,6 +263,7 @@ export default function PollTollControlPlane() {
 
         {plane === "infra" && (
           <InfraConsole
+            language={language}
             snapshots={snapshots}
             onSnapshotIngested={handleSnapshotIngested}
           />
@@ -260,15 +275,9 @@ export default function PollTollControlPlane() {
         <div className="mx-auto max-w-7xl flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2 font-mono">
             <Cpu className="h-3.5 w-3.5 text-indigo-600" />
-            <span>
-              PollToll Independent Electoral Change-Audit Protocol • DuckDB +
-              Wilson 95% CIs + Ed25519 + Gemini 3.8
-            </span>
+            <span>{pageT.footerProtocol}</span>
           </div>
-          <div>
-            Synthetic Testbed Only (`SYN-GJ-*`) • Built for Independent
-            Observers, Universities &amp; Civic Auditors
-          </div>
+          <div>{pageT.footerDisclaimer}</div>
         </div>
       </footer>
     </div>
